@@ -7,10 +7,30 @@ export function calculateGTBHsync(gtCD: number, bhCD: number, dwCD: number = 150
   return syncTime;
 }
 
+import { GOLDEN_TOWER } from '../data/ultimate-weapons-data';
+
+type UWLevel = { value: number; cost: number };
+
+function gtCooldownTable(): UWLevel[] {
+  const upgrades = (GOLDEN_TOWER as unknown as { upgrades: Record<string, { values: readonly UWLevel[] }> }).upgrades;
+  return [...upgrades.Cooldown.values];
+}
+
+function gtLevelIndex(table: UWLevel[], cd: number): number {
+  for (let i = 0; i < table.length; i++) {
+    if (table[i].value <= cd) return i;
+  }
+  return table.length - 1;
+}
+
 export function getGTBHRequiredStones(currentGTCD: number, targetGTCD: number) {
-  const diff = currentGTCD - targetGTCD;
-  const stonesPerSecond = 16;
-  return Math.ceil(diff * stonesPerSecond);
+  const table = gtCooldownTable();
+  const from = gtLevelIndex(table, currentGTCD);
+  const to = gtLevelIndex(table, targetGTCD);
+  if (to <= from) return 0;
+  let cost = 0;
+  for (let i = from + 1; i <= to; i++) cost += table[i].cost;
+  return cost;
 }
 
 export function calculateDPS(damage: number, attackSpeed: number) {
