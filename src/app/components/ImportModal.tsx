@@ -8,7 +8,7 @@ import {
   restoreBackup,
   type BackupData,
 } from '../lib/import';
-import { useRuns, type Run } from '../hooks/useLocalStorage';
+import { useRuns, formatBig, type Run } from '../hooks/useLocalStorage';
 import { decodeSaveFile, type DecodedAccount } from '../lib/playersave';
 
 const inputCls =
@@ -289,14 +289,21 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
-                    { label: 'Tier', value: tier, set: setTier, bad: tier == null },
-                    { label: 'Wave', value: wave, set: setWave, bad: wave == null },
-                    { label: 'Coins', value: coins, set: setCoins, bad: coins == null },
-                    { label: 'Cells', value: cells, set: setCells, bad: false },
-                    { label: 'Minutes', value: durationMin, set: setDurationMin, bad: durationMin == null },
+                    { label: 'Tier', value: tier, set: setTier, bad: tier == null, fmt: false },
+                    { label: 'Wave', value: wave, set: setWave, bad: wave == null, fmt: true },
+                    { label: 'Coins', value: coins, set: setCoins, bad: coins == null, fmt: true },
+                    { label: 'Cells', value: cells, set: setCells, bad: false, fmt: true },
+                    { label: 'Minutes', value: durationMin, set: setDurationMin, bad: durationMin == null, fmt: false },
                   ].map((f, i) => (
                     <div key={i}>
-                      <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">{f.label}</label>
+                      <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">
+                        {f.label}
+                        {f.fmt && f.value != null && (
+                          <span className="ml-1 font-bold" style={{ color: 'var(--color-gold)' }}>
+                            ={formatBig(f.value)}
+                          </span>
+                        )}
+                      </label>
                       <input
                         type="number"
                         min={0}

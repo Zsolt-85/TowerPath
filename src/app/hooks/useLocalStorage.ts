@@ -57,15 +57,22 @@ export function useRuns() {
   return useLocalStorage<Run[]>('towerpath:runs', []);
 }
 
+// Game-exact unit ladder (mirrors the in-game formatter):
+// K M B T q Q s S O N D, then ab-az, then exponential.
+const GAME_UNITS = [
+  'K', 'M', 'B', 'T', 'q', 'Q', 's', 'S', 'O', 'N', 'D',
+  'ab', 'ac', 'ad', 'ae', 'af', 'ag', 'ah', 'ai', 'aj', 'ak', 'al', 'am',
+  'an', 'ao', 'ap', 'aq', 'ar', 'as', 'at', 'au', 'av', 'aw', 'ax', 'ay', 'az',
+];
+
 export function formatBig(n: number): string {
   if (!isFinite(n)) return '0';
-  if (n < 1000) return n % 1 === 0 ? String(n) : n.toFixed(1);
-  const units = ['K', 'M', 'B', 'T', 'Qa', 'Qi'];
+  if (n < 0) return `-${formatBig(-n)}`;
+  if (n < 1000) return String(Math.round(n));
   let v = n;
-  let u = -1;
-  while (v >= 1000 && u < units.length - 1) {
+  for (let i = 0; i < GAME_UNITS.length; i++) {
     v /= 1000;
-    u++;
+    if (v < 1000) return `${Math.round(v * 100) / 100}${GAME_UNITS[i]}`;
   }
-  return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)}${units[u]}`;
+  return n.toExponential(2);
 }

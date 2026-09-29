@@ -40,23 +40,30 @@ export function LogRunModal({ open, onClose }: { open: boolean; onClose: () => v
       >
         <h2 className="font-['Orbitron'] text-lg font-bold mb-1">Log a Run</h2>
         <p className="text-xs text-[var(--color-text-muted)] mb-6">Saved in your browser — feeds the dashboard and progress charts.</p>
-        {[
-          { label: 'Tier', value: tier, set: setTier },
-          { label: 'Wave reached', value: wave, set: setWave },
-          { label: 'Coins earned', value: coins, set: setCoins },
-          { label: 'Duration (minutes)', value: durationMin, set: setDurationMin },
-        ].map((f, i) => (
-          <div key={i} className="mb-4">
-            <label className="text-xs text-[var(--color-text-muted)] block mb-2">{f.label}</label>
-            <input
-              type="number"
-              min={0}
-              value={f.value}
-              onChange={(e) => f.set(Math.max(0, Number(e.target.value) || 0))}
-              className={inputCls}
-            />
-          </div>
-        ))}
+          {[
+            { label: 'Tier', value: tier, set: setTier, fmt: false },
+            { label: 'Wave reached', value: wave, set: setWave, fmt: true },
+            { label: 'Coins earned', value: coins, set: setCoins, fmt: true },
+            { label: 'Duration (minutes)', value: durationMin, set: setDurationMin, fmt: false },
+          ].map((f, i) => (
+            <div key={i} className="mb-4">
+              <label className="text-xs text-[var(--color-text-muted)] block mb-2">
+                {f.label}
+                {f.fmt && (
+                  <span className="ml-2 font-['Orbitron'] font-bold" style={{ color: 'var(--color-gold)' }}>
+                    = {formatBig(f.value)}
+                  </span>
+                )}
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={f.value}
+                onChange={(e) => f.set(Math.max(0, Number(e.target.value) || 0))}
+                className={inputCls}
+              />
+            </div>
+          ))}
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}

@@ -7,6 +7,8 @@ import { TrackerTab } from './components/TrackerTab';
 import { CardsTab } from './components/CardsTab';
 import { UWTab } from './components/UWTab';
 import { SyncTab } from './components/SyncTab';
+import { TournamentTab } from './components/TournamentTab';
+import { SyncButton } from './components/SyncButton';
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -15,6 +17,7 @@ const TABS = [
   { id: 'cards', label: 'Cards' },
   { id: 'uw', label: 'UW Planner' },
   { id: 'sync', label: 'Sync Calc' },
+  { id: 'tourney', label: 'Tournament' },
 ];
 
 export default function TowerPathPage() {
@@ -48,6 +51,7 @@ export default function TowerPathPage() {
             ))}
           </nav>
           <div className="flex gap-2">
+            <SyncButton />
             <button
               onClick={() => setLogOpen(true)}
               className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[var(--color-gold)] text-[var(--color-bg-deep)] hover:bg-[#ffc000] transition-all shadow-lg shadow-[var(--color-gold-glow)]"
@@ -67,6 +71,7 @@ export default function TowerPathPage() {
         {activeTab === 'cards' && <CardsTab />}
         {activeTab === 'uw' && <UWTab />}
         {activeTab === 'sync' && <SyncTab />}
+        {activeTab === 'tourney' && <TournamentTab />}
       </div>
     </div>
   );

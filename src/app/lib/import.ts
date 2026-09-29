@@ -3,26 +3,30 @@
 export const STRATEGIES = ['Blender', 'Glass Cannon', 'Devo', 'Orbless', 'eHP', 'Hybrid'] as const;
 export type Strategy = (typeof STRATEGIES)[number];
 
-const UNIT_MULT: Record<string, number> = {
-  K: 1e3,
-  M: 1e6,
-  B: 1e9,
-  T: 1e12,
-  QA: 1e15,
-  QI: 1e18,
-};
+const GAME_UNIT_MULT: Record<string, number> = (() => {
+  const m: Record<string, number> = {};
+  ['K', 'M', 'B', 'T', 'q', 'Q', 's', 'S', 'O', 'N', 'D'].forEach((u, i) => {
+    m[u] = 1000 ** (i + 1);
+  });
+  'bcdefghijklmnopqrstuvwxyz'.split('').forEach((ch, i) => {
+    m[`a${ch}`] = 1000 ** (12 + i);
+  });
+  return m;
+})();
 
-/** Parse "412.8T", "1,234", "$2.4B", "61.2B cells" style values into plain numbers. */
+// Lenient lowercase aliases (game output is case-sensitive: q≠Q, s≠S).
+const UNIT_ALIAS: Record<string, string> = { k: 'K', m: 'M', b: 'B', t: 'T', o: 'O', n: 'N', d: 'D' };
+
+/** Parse "412.8T", "1,234", "$2.4B", "61.2B" style values into plain numbers. Case-sensitive like the game. */
 export function parseBig(input: string): number | null {
   if (!input) return null;
-  const m = input
-    .toUpperCase()
-    .replace(/[$©,\s]/g, '')
-    .match(/^(\d+(?:\.\d+)?)([KMBT]|QA|QI)?/);
+  const m = input.replace(/[$©,\s]/g, '').match(/^(\d+(?:\.\d+)?)([A-Za-z]{1,2})?$/);
   if (!m) return null;
   const base = Number(m[1]);
   if (!Number.isFinite(base)) return null;
-  return base * (m[2] ? (UNIT_MULT[m[2]] ?? 1) : 1);
+  if (!m[2]) return base;
+  const mult = GAME_UNIT_MULT[m[2]] ?? (UNIT_ALIAS[m[2]] ? GAME_UNIT_MULT[UNIT_ALIAS[m[2]]] : undefined);
+  return mult === undefined ? null : base * mult;
 }
 
 export interface ParsedReport {
@@ -47,8 +51,8 @@ export function parseBattleReport(text: string): ParsedReport {
 
   const tierRaw = firstMatch(t, /tier\s*[:#]?\s*(\d+)/i);
   const waveRaw = firstMatch(t, /wave\s*[:#]?\s*([\d,]+)/i);
-  const coinsRaw = firstMatch(t, /coins?\s*[:#]?\s*\$?\s*([\d,]+\.?\d*\s*(?:[KMBT]|Qa|Qi)?)/i);
-  const cellsRaw = firstMatch(t, /cells?\s*[:#]?\s*([\d,]+\.?\d*\s*(?:[KMBT])?)/i);
+  const coinsRaw = firstMatch(t, /coins?\s*[:#]?\s*\$?\s*([\d,]+\.?\d*\s*[A-Za-z]{0,2})/i);
+  const cellsRaw = firstMatch(t, /cells?\s*[:#]?\s*([\d,]+\.?\d*\s*[A-Za-z]{0,2})/i);
 
   let durationMin: number | null = null;
   const hm = t.match(/(\d+)\s*h(?:ours?|rs?)?\s*(\d+)?\s*m(?:in(?:utes?)?)?/i);

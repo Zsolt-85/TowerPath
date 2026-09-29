@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useLocalStorage, formatBig } from '../hooks/useLocalStorage';
 import { useRecommendations } from '../hooks/useRecommendations';
 
 const inputCls =
@@ -57,6 +57,9 @@ export function PlannerTab() {
               onChange={(e) => f.set(num(e.target.value, f.value))}
               className="w-full bg-transparent font-['Orbitron'] text-xl font-bold text-[var(--color-text)] focus:outline-none focus:text-[var(--color-gold)] transition-colors"
             />
+            <div className="font-['Orbitron'] text-xs font-bold mt-1" style={{ color: 'var(--color-gold)' }}>
+              = {formatBig(f.value)}
+            </div>
           </div>
         ))}
       </div>

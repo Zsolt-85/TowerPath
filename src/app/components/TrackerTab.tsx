@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRuns, formatBig, type Run } from '../hooks/useLocalStorage';
 import { STRATEGIES, collectBackup, downloadFile } from '../lib/import';
 import { ImportModal } from './ImportModal';
+import { LineChart } from './charts';
 
 function coinsPerHour(r: Run): number {
   return r.durationMin > 0 ? (r.coins / r.durationMin) * 60 : 0;
@@ -14,6 +15,7 @@ export function TrackerTab({ onLogRun }: { onLogRun: () => void }) {
   const [importOpen, setImportOpen] = useState(false);
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [stratFilter, setStratFilter] = useState<string>('all');
+  const [metric, setMetric] = useState<'coins' | 'cells'>('coins');
 
   const best = useMemo(() => runs.reduce((m, r) => Math.max(m, r.wave), 0), [runs]);
   const totalCoins = useMemo(() => runs.reduce((m, r) => m + r.coins, 0), [runs]);
@@ -33,6 +35,23 @@ export function TrackerTab({ onLogRun }: { onLogRun: () => void }) {
   const maxWave = Math.max(1, ...chart.map((r) => r.wave));
 
   const tiers = useMemo(() => [...new Set(runs.map((r) => r.tier))].sort((a, b) => a - b), [runs]);
+
+  const trend = useMemo(() => {
+    const chrono = [...runs].reverse();
+    const val = (r: Run) => (metric === 'cells' ? (r.cells ?? 0) : r.coins);
+    return {
+      perRun: chrono.map((r) => ({
+        x: `T${r.tier} ${r.wave.toLocaleString()}`,
+        y: val(r),
+        hint: new Date(r.date).toLocaleDateString(),
+      })),
+      perHour: chrono.map((r) => ({
+        x: `T${r.tier} ${r.wave.toLocaleString()}`,
+        y: r.durationMin > 0 ? (val(r) / r.durationMin) * 60 : 0,
+        hint: new Date(r.date).toLocaleDateString(),
+      })),
+    };
+  }, [runs, metric]);
 
   const byTier = useMemo(() => {
     return tiers
@@ -102,7 +121,7 @@ export function TrackerTab({ onLogRun }: { onLogRun: () => void }) {
                     />
                   </div>
                   <div className="text-xs font-['Orbitron'] font-bold w-24 text-right">{formatBig(t.cph)}/h</div>
-                  <div className="text-[10px] text-[var(--color-text-muted)] w-14 text-right">{t.runs} runs</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] w-14 text-right">{t.runs} {t.runs === 1 ? 'run' : 'runs'}</div>
                 </div>
               ))}
             </div>
@@ -121,13 +140,54 @@ export function TrackerTab({ onLogRun }: { onLogRun: () => void }) {
                     />
                   </div>
                   <div className="text-xs font-['Orbitron'] font-bold w-24 text-right">{formatBig(s.cph)}/h</div>
-                  <div className="text-[10px] text-[var(--color-text-muted)] w-14 text-right">{s.runs} runs</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] w-14 text-right">{s.runs} {s.runs === 1 ? 'run' : 'runs'}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
       )}
+
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+          <h2 className="font-['Orbitron'] text-lg font-bold">Earnings trends</h2>
+          <div className="flex gap-2">
+            {(['coins', 'cells'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMetric(m)}
+                className={`text-xs px-4 py-2 rounded-lg border transition-all capitalize ${
+                  metric === m
+                    ? 'border-[var(--color-gold)] text-[var(--color-gold)] bg-[var(--color-gold-glow)]'
+                    : 'border-[var(--color-border)] text-[var(--color-text-dim)] hover:text-[var(--color-text)]'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+        {runs.length === 0 ? (
+          <div className="text-sm text-[var(--color-text-muted)] py-4 text-center">
+            Log or import runs to chart your earnings.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+                {metric === 'coins' ? 'Coins' : 'Cells'} per run · oldest → newest
+              </div>
+              <LineChart series={[{ label: metric === 'coins' ? 'Coins/run' : 'Cells/run', color: 'var(--color-gold)', points: trend.perRun }]} />
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+                {metric === 'coins' ? 'Coins' : 'Cells'} per hour · oldest → newest
+              </div>
+              <LineChart series={[{ label: metric === 'coins' ? 'Coins/hr' : 'Cells/hr', color: 'var(--color-teal)', points: trend.perHour }]} />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8">
