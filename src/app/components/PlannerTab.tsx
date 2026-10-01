@@ -4,9 +4,6 @@ import { useMemo, useState } from 'react';
 import { useLocalStorage, formatBig } from '../hooks/useLocalStorage';
 import { useRecommendations } from '../hooks/useRecommendations';
 
-const inputCls =
-  "w-full px-4 py-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text)] text-sm font-['Orbitron'] focus:border-[var(--color-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--color-gold-glow)] transition-all";
-
 export function PlannerTab() {
   const [damage, setDamage] = useLocalStorage('towerpath:stats:damage', 12800000);
   const [attackSpeed, setAttackSpeed] = useLocalStorage('towerpath:stats:aspd', 0.85);
@@ -23,7 +20,7 @@ export function PlannerTab() {
   };
 
   const { recs: serverRecs, source } = useRecommendations({ damage, attackSpeed, coins, stones, gtCd, bhCd });
-  const recs = serverRecs ?? [];
+  const recs = useMemo(() => serverRecs ?? [], [serverRecs]);
 
   const affordable = recs.filter((r) =>
     r.currency === 'stones' ? stones >= r.cost : coins >= r.cost

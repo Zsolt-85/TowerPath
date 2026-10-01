@@ -28,25 +28,27 @@ function timeAgo(ts: number): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
+function readLastSync(): number {
+  try {
+    const raw = localStorage.getItem(SYNC_LASTSYNC_KEY);
+    return raw ? Number(JSON.parse(raw)) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function SyncButton() {
   const [backend, setBackend] = useState<boolean | null>(null);
-  const [hasPass, setHasPass] = useState(false);
+  const [hasPass, setHasPass] = useState(() => readLS(SYNC_PASS_KEY) != null);
   const [open, setOpen] = useState(false);
   const [pass, setPass] = useState('');
   const [busy, setBusy] = useState<'push' | 'pull' | null>(null);
   const [msg, setMsg] = useState('');
-  const [lastSync, setLastSync] = useState<number>(0);
+  const [lastSync, setLastSync] = useState(readLastSync);
   const autoRan = useRef(false);
 
   useEffect(() => {
     checkSyncBackend().then(setBackend);
-    setHasPass(readLS(SYNC_PASS_KEY) != null);
-    try {
-      const raw = localStorage.getItem(SYNC_LASTSYNC_KEY);
-      if (raw) setLastSync(Number(JSON.parse(raw)) || 0);
-    } catch {
-      // ignore
-    }
   }, []);
 
   const markSynced = useCallback(() => {
@@ -88,13 +90,17 @@ export function SyncButton() {
     [markSynced]
   );
 
-  // Auto-pull once on start when a passphrase is saved.
+  // Auto-pull once on start when a passphrase is saved. Deferred past the
+  // synchronous effect body so all state updates happen asynchronously.
   useEffect(() => {
     if (autoRan.current || backend !== true) return;
     const saved = readLS(SYNC_PASS_KEY);
     if (!saved) return;
     autoRan.current = true;
-    void doPull(saved);
+    void (async () => {
+      await Promise.resolve();
+      await doPull(saved);
+    })();
   }, [backend, doPull]);
 
   const enable = async () => {

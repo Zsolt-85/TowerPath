@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { StatsBar } from './StatsBar';
-import { useRuns, formatBig, type Run } from '../hooks/useLocalStorage';
+import { useRuns, formatBig, type Run, type RunType } from '../hooks/useLocalStorage';
 import { useRecommendations } from '../hooks/useRecommendations';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
@@ -15,6 +15,7 @@ export function LogRunModal({ open, onClose }: { open: boolean; onClose: () => v
   const [wave, setWave] = useState(4000);
   const [coins, setCoins] = useState(2000000000);
   const [durationMin, setDurationMin] = useState(480);
+  const [runType, setRunType] = useState<RunType>('farm');
 
   if (!open) return null;
 
@@ -26,6 +27,8 @@ export function LogRunModal({ open, onClose }: { open: boolean; onClose: () => v
       wave: Math.max(1, wave),
       coins: Math.max(0, coins),
       durationMin: Math.max(1, durationMin),
+      source: 'manual',
+      runType,
     };
     setRuns((prev) => [run, ...prev].slice(0, 200));
     onClose();
@@ -64,6 +67,14 @@ export function LogRunModal({ open, onClose }: { open: boolean; onClose: () => v
               />
             </div>
           ))}
+        <div className="mb-2">
+          <label className="text-xs text-[var(--color-text-muted)] block mb-2">Run type</label>
+          <select value={runType} onChange={(e) => setRunType(e.target.value as RunType)} className={inputCls}>
+            <option value="farm">Farming</option>
+            <option value="tournament">Tournament</option>
+            <option value="dissonance">Dissonance</option>
+          </select>
+        </div>
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
@@ -85,11 +96,9 @@ export function LogRunModal({ open, onClose }: { open: boolean; onClose: () => v
 
 export function DashboardTab({
   onOpenSync,
-  logOpen,
   setLogOpen,
 }: {
   onOpenSync: () => void;
-  logOpen: boolean;
   setLogOpen: (b: boolean) => void;
 }) {
   const [runs] = useRuns();

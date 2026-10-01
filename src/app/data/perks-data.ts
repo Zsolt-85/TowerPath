@@ -35,7 +35,7 @@ export const TradeoffPerks = Object.freeze({
   COINS_HEALTH: { category: 'TRADEOFF', maxLevel: 1, getValue: () => 1.8, getDebuff: () => 70, formatValue: (v: number, d: number) => 'x' + v.toFixed(2) + ' coins, max health -' + d.toFixed(2) + '%' },
   HEALTH_REGEN_LIFESTEAL: { category: 'TRADEOFF', maxLevel: 1, getValue: () => 50, getDebuff: () => 90, formatValue: (v: number, d: number) => 'Enemies -' + v.toFixed(2) + '% health, tower regen -' + d.toFixed(2) + '%' },
   DAMAGE_DAMAGE: { category: 'TRADEOFF', maxLevel: 1, getValue: () => 50, getDebuff: () => 50, formatValue: (v: number, d: number) => 'Enemies damage -' + v.toFixed(2) + '%, tower damage -' + d.toFixed(2) + '%' },
-  RANGE_RANGE: { category: 'TRADEOFF', maxLevel: 1, getValue: () => 10, getDebuff: () => 3, formatValue: (v: any, d: number) => 'Ranged reduced, damage x' + d.toFixed(2) },
+  RANGE_RANGE: { category: 'TRADEOFF', maxLevel: 1, getValue: () => 10, getDebuff: () => 3, formatValue: (_v: number, d: number) => 'Ranged reduced, damage x' + d.toFixed(2) },
   SPEED_DAMAGE: { category: 'TRADEOFF', maxLevel: 1, getValue: () => 50, getDebuff: () => 2.5, formatValue: (v: number, d: number) => 'Speed -' + v.toFixed(2) + '%, damage x' + d.toFixed(2) },
   CASH_WAVE_KILL: { category: 'TRADEOFF', maxLevel: 1, getValue: () => 12, getDebuff: () => 100, formatValue: (v: number) => 'x' + v + ' cash/wave, kills no cash' },
   REGEN_HEALTH: { category: 'TRADEOFF', maxLevel: 1, getValue: () => 8, getDebuff: () => 60, formatValue: (v: number, d: number) => 'Tower regen x' + v.toFixed(2) + ', max health -' + d.toFixed(2) + '%' },

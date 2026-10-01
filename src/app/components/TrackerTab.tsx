@@ -10,7 +10,7 @@ function coinsPerHour(r: Run): number {
   return r.durationMin > 0 ? (r.coins / r.durationMin) * 60 : 0;
 }
 
-export function TrackerTab({ onLogRun }: { onLogRun: () => void }) {
+export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOpenRun: (id: string) => void }) {
   const [runs, setRuns] = useRuns();
   const [importOpen, setImportOpen] = useState(false);
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -271,7 +271,12 @@ export function TrackerTab({ onLogRun }: { onLogRun: () => void }) {
           ) : (
             <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
               {filtered.map((r) => (
-                <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--color-bg-card-hover)] transition-all">
+                <div
+                  key={r.id}
+                  onClick={() => onOpenRun(r.id)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--color-bg-card-hover)] transition-all cursor-pointer"
+                  title={r.detail ? 'Open full analysis' : 'Open run'}
+                >
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold">
                       Tier {r.tier} · Wave {r.wave.toLocaleString()}
@@ -280,13 +285,26 @@ export function TrackerTab({ onLogRun }: { onLogRun: () => void }) {
                           {r.strategy}
                         </span>
                       )}
+                      {r.runType && r.runType !== 'farm' && (
+                        <span className="ml-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-gold-glow)] text-[var(--color-gold)]">
+                          {r.runType}
+                        </span>
+                      )}
+                      {r.detail && Object.keys(r.detail).length > 0 && (
+                        <span className="ml-1 text-[10px] px-2 py-0.5 rounded bg-[var(--color-bg)] text-[var(--color-text-dim)]">
+                          full report →
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-[var(--color-text-dim)] mt-0.5">
                       {formatBig(r.coins)} coins{r.cells ? ` · ${formatBig(r.cells)} cells` : ''} · {r.durationMin} min · {new Date(r.date).toLocaleDateString()}
                     </div>
                   </div>
                   <button
-                    onClick={() => setRuns((prev) => prev.filter((x) => x.id !== r.id))}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRuns((prev) => prev.filter((x) => x.id !== r.id));
+                    }}
                     className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-red)] px-2 py-1 transition-colors"
                     title="Delete run"
                   >

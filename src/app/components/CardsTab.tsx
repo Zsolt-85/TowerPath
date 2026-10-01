@@ -46,7 +46,7 @@ export function CardsTab() {
             <span className="w-10 h-10 rounded-xl bg-[var(--color-gold-glow)] text-[var(--color-gold)] flex items-center justify-center text-base">◈</span>
             {g.title} Cards
           </h2>
-          <p className="text-xs text-[var(--color-text-muted)] mb-6">Click the stars to set each card's level — saved automatically.</p>
+          <p className="text-xs text-[var(--color-text-muted)] mb-6">Click the stars to set each card level — saved automatically.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {g.names.map((name) => {
               const s = stars[name] ?? 0;

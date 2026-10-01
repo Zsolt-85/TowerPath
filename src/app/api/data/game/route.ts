@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { LAB_GROUPS, LabValues, MAX_INTEREST_LEVELS } from "@/app/data/labs-data";
 import { WORKSHOP_UPGRADES } from "@/app/data/workshop-data";
 import { ULTIMATE_WEAPONS } from "@/app/data/ultimate-weapons-data";

@@ -3,11 +3,12 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   STRATEGIES,
-  parseBattleReport,
   isValidBackup,
   restoreBackup,
   type BackupData,
 } from '../lib/import';
+import { parseFullReport } from '../lib/battleReport';
+import type { RunType } from '../hooks/useLocalStorage';
 import { useRuns, formatBig, type Run } from '../hooks/useLocalStorage';
 import { decodeSaveFile, type DecodedAccount } from '../lib/playersave';
 
@@ -103,7 +104,7 @@ function SaveFilePanel({ onApplied }: { onApplied: (msg: string) => void }) {
           <strong style={{ color: 'var(--color-red)' }}>Could not read this file.</strong>
           <div className="mt-1 text-[var(--color-text-dim)]">{error}</div>
           <div className="mt-2 text-[var(--color-text-dim)]">
-            It must be the game's playerInfo.dat (Android/data/com.TechTreeGames.TheTower/files/). TowerPath backup .json files go in the other tab.
+            It must be the game playerInfo.dat file (Android/data/com.TechTreeGames.TheTower/files/). TowerPath backup .json files go in the other tab.
           </div>
         </div>
       )}
@@ -156,7 +157,8 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
   const [savedMsg, setSavedMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const parsed = useMemo(() => (text.trim() ? parseBattleReport(text) : null), [text]);
+  const [runType, setRunType] = useState<RunType>('farm');
+  const parsed = useMemo(() => (text.trim() ? parseFullReport(text) : null), [text]);
 
   const [tier, setTier] = useState<number | null>(null);
   const [wave, setWave] = useState<number | null>(null);
@@ -164,10 +166,12 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
   const [cells, setCells] = useState<number | null>(null);
   const [durationMin, setDurationMin] = useState<number | null>(null);
 
-  // Seed editable fields when a new paste is parsed
+  // Seed editable fields when a new paste is parsed. This is React's
+  // documented "adjust state during render" pattern: it re-renders immediately
+  // with the seeded draft, then leaves user edits alone (seedKey guard).
   const [seedKey, setSeedKey] = useState('');
   const curKey = useMemo(
-    () => [parsed?.tier, parsed?.wave, parsed?.coins, parsed?.cells, parsed?.durationMin, parsed?.strategy].join('|'),
+    () => [parsed?.tier, parsed?.wave, parsed?.coins, parsed?.cells, parsed?.durationMin].join('|'),
     [parsed]
   );
   if (parsed && curKey !== seedKey) {
@@ -177,7 +181,6 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
     setCoins(parsed.coins);
     setCells(parsed.cells);
     setDurationMin(parsed.durationMin);
-    if (parsed.strategy) setStrategy(parsed.strategy);
   }
 
   if (!open) return null;
@@ -196,6 +199,8 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
       cells: cells ?? undefined,
       strategy: strategy || undefined,
       source: 'paste',
+      runType,
+      detail: parsed && Object.keys(parsed.detail).length > 0 ? parsed.detail : undefined,
     };
     setRuns((prev) => [run, ...prev].slice(0, 500));
     setText('');
@@ -277,16 +282,13 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
             />
             {parsed && (
               <div className="mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-                <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-4">
+                <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
                   Preview — check before saving
                 </div>
-                {parsed.issues.length > 0 && (
-                  <div className="mb-4 space-y-1">
-                    {parsed.issues.map((iss, i) => (
-                      <div key={i} className="text-xs text-[var(--color-gold)]">⚠ {iss}</div>
-                    ))}
-                  </div>
-                )}
+                <div className="text-xs mb-4" style={{ color: 'var(--color-teal)' }}>
+                  {parsed.stats.fieldsParsed} fields across {parsed.stats.sectionsFound.length} sections
+                  {parsed.stats.unmapped.length > 0 ? ` · ${parsed.stats.unmapped.length} unparsed (${parsed.stats.unmapped.slice(0, 3).join('; ')}${parsed.stats.unmapped.length > 3 ? '…' : ''})` : ' · everything mapped ✓'}
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     { label: 'Tier', value: tier, set: setTier, bad: tier == null, fmt: false },
@@ -321,6 +323,14 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
                       {STRATEGIES.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">Run type</label>
+                    <select value={runType} onChange={(e) => setRunType(e.target.value as RunType)} className={inputCls}>
+                      <option value="farm">Farming</option>
+                      <option value="tournament">Tournament</option>
+                      <option value="dissonance">Dissonance</option>
                     </select>
                   </div>
                 </div>

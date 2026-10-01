@@ -4,8 +4,12 @@ import { useMemo, useState } from 'react';
 import { ULTIMATE_WEAPONS } from '../data/ultimate-weapons-data';
 import { calculateGTBHsync, getGTBHRequiredStones } from '../lib/calculation';
 
+type UWTable = {
+  upgrades?: { Cooldown?: { values?: { value: number }[] } };
+};
+
 function baseCooldown(uwName: string): number {
-  const uw = (ULTIMATE_WEAPONS as Record<string, any>)[uwName];
+  const uw = (ULTIMATE_WEAPONS as unknown as Record<string, UWTable>)[uwName];
   const cd = uw?.upgrades?.Cooldown?.values?.[0]?.value;
   return typeof cd === 'number' ? cd : 150;
 }

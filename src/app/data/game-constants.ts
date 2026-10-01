@@ -71,7 +71,7 @@ export const getRealGameSpeed = (displayedGameSpeed: number, introSprint: boolea
 };
 
 export const getWaveCooldown = (wave: number, waveAccelerator: number, tournament: boolean): number => {
-  const waModifier = 1 - ((WAVE_ACCELERATOR_CARD as any)[waveAccelerator] || 0) / 100;
+  const waModifier = 1 - ((WAVE_ACCELERATOR_CARD as unknown as Record<number, number>)[waveAccelerator] || 0) / 100;
   const baseCooldown = isBossWave(wave) ? BOSS_WAVE_COOLDOWN : NORMAL_WAVE_COOLDOWN;
   const tournamentModifier = tournament ? TOURNAMENT_COOLDOWN_MODIFIER : 1;
   return baseCooldown * waModifier * tournamentModifier;

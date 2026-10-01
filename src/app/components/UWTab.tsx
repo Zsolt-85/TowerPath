@@ -17,8 +17,12 @@ const ICONS: Record<string, string> = {
   Spotlight: '◇',
 };
 
+type UWTable = {
+  upgrades?: { Cooldown?: { values?: { value: number }[] } };
+};
+
 function baseCooldown(name: string): number | null {
-  const uw = (ULTIMATE_WEAPONS as Record<string, any>)[name];
+  const uw = (ULTIMATE_WEAPONS as unknown as Record<string, UWTable>)[name];
   const v = uw?.upgrades?.Cooldown?.values?.[0]?.value;
   return typeof v === 'number' ? v : null;
 }

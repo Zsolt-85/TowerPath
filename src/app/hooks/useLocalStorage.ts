@@ -1,15 +1,23 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export function useLocalStorage<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(initial);
+  // Mirror of the latest value. Updaters must stay pure (React may invoke
+  // them during another component's render), so persistence + broadcast
+  // happen outside setValue, using this mirror as the source of truth.
+  const ref = useRef<T>(initial);
 
   useEffect(() => {
     const read = () => {
       try {
         const raw = localStorage.getItem(key);
-        if (raw != null) setValue(JSON.parse(raw));
+        if (raw != null) {
+          const parsed = JSON.parse(raw) as T;
+          ref.current = parsed;
+          setValue(parsed);
+        }
       } catch {
         // corrupted storage: keep defaults
       }
@@ -18,28 +26,38 @@ export function useLocalStorage<T>(key: string, initial: T) {
     const onStore = (e: Event) => {
       if ((e as CustomEvent<string>).detail === key) read();
     };
+    const onExternalStore = (e: StorageEvent) => {
+      if (e.key === key) read();
+    };
     window.addEventListener('towerpath:store', onStore);
-    return () => window.removeEventListener('towerpath:store', onStore);
+    window.addEventListener('storage', onExternalStore);
+    return () => {
+      window.removeEventListener('towerpath:store', onStore);
+      window.removeEventListener('storage', onExternalStore);
+    };
   }, [key]);
 
   const set = useCallback(
     (v: T | ((prev: T) => T)) => {
-      setValue((prev) => {
-        const next = typeof v === 'function' ? (v as (p: T) => T)(prev) : v;
-        try {
-          localStorage.setItem(key, JSON.stringify(next));
-          window.dispatchEvent(new CustomEvent('towerpath:store', { detail: key }));
-        } catch {
-          // storage full or unavailable: keep in-memory value
-        }
-        return next;
-      });
+      const next = typeof v === 'function' ? (v as (p: T) => T)(ref.current) : v;
+      ref.current = next;
+      setValue(next);
+      try {
+        localStorage.setItem(key, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent('towerpath:store', { detail: key }));
+      } catch {
+        // storage full or unavailable: keep in-memory value
+      }
     },
     [key]
   );
 
   return [value, set] as const;
 }
+
+import type { RunDetail } from '../lib/battleReport';
+
+export type RunType = 'farm' | 'tournament' | 'dissonance';
 
 export interface Run {
   id: string;
@@ -51,6 +69,8 @@ export interface Run {
   cells?: number;
   strategy?: string;
   source?: 'manual' | 'paste' | 'json';
+  runType?: RunType;
+  detail?: RunDetail;
 }
 
 export function useRuns() {
