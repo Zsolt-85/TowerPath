@@ -1,28 +1,27 @@
 'use client';
 
-import { useMemo } from 'react';
 import { COMMON_CARDS, RARE_CARDS, EPIC_CARDS } from '../data/cards-data';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
+// Cumulative gems spent to reach each star level (index = stars).
 const STAR_CUM_COST = [0, 20, 60, 160, 320, 560, 960, 1600];
-const MAX_STARS = 7;
-
-const GROUPS: Array<{ title: string; names: string[]; color: string }> = [
-  { title: 'Common', names: Object.keys(COMMON_CARDS), color: 'var(--color-text-dim)' },
-  { title: 'Rare', names: Object.keys(RARE_CARDS), color: 'var(--color-teal)' },
-  { title: 'Epic', names: Object.keys(EPIC_CARDS), color: 'var(--color-gold)' },
-];
 
 export function CardsTab() {
   const [stars, setStars] = useLocalStorage<Record<string, number>>('towerpath:cards', {});
 
-  const all = useMemo(() => GROUPS.flatMap((g) => g.names), []);
+  const all = [
+    ...Object.keys(COMMON_CARDS),
+    ...Object.keys(RARE_CARDS),
+    ...Object.keys(EPIC_CARDS),
+  ];
+
   const owned = all.filter((n) => (stars[n] ?? 0) > 0);
-  const gemsSpent = owned.reduce((m, n) => m + STAR_CUM_COST[Math.min(MAX_STARS, stars[n] ?? 0)], 0);
-  const gemsToMax = all.reduce((m, n) => m + (1600 - STAR_CUM_COST[Math.min(MAX_STARS, stars[n] ?? 0)]), 0);
+  const costOf = (n: string) => STAR_CUM_COST[Math.min(7, stars[n] ?? 0)];
+  const gemsSpent = owned.reduce((m, n) => m + costOf(n), 0);
+  const gemsToMax = all.reduce((m, n) => m + (1600 - costOf(n)), 0);
 
   const setCardStars = (name: string, s: number) =>
-    setStars((prev) => ({ ...prev, [name]: Math.max(0, Math.min(MAX_STARS, s)) }));
+    setStars((prev) => ({ ...prev, [name]: Math.max(0, Math.min(7, s)) }));
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -40,7 +39,11 @@ export function CardsTab() {
         ))}
       </div>
 
-      {GROUPS.map((g) => (
+      {[
+        { title: 'Common', names: Object.keys(COMMON_CARDS), color: 'var(--color-text-dim)' },
+        { title: 'Rare', names: Object.keys(RARE_CARDS), color: 'var(--color-teal)' },
+        { title: 'Epic', names: Object.keys(EPIC_CARDS), color: 'var(--color-gold)' },
+      ].map((g) => (
         <div key={g.title} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8">
           <h2 className="font-['Orbitron'] text-lg font-bold mb-1 flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl bg-[var(--color-gold-glow)] text-[var(--color-gold)] flex items-center justify-center text-base">◈</span>
@@ -60,7 +63,7 @@ export function CardsTab() {
                   }`}
                 >
                   <div className="text-base mb-2">
-                    {Array.from({ length: MAX_STARS }, (_, j) => (
+                    {Array.from({ length: 7 }, (_, j) => (
                       <button
                         key={j}
                         onClick={() => setCardStars(name, j + 1 === s ? j : j + 1)}
@@ -74,7 +77,7 @@ export function CardsTab() {
                   <div className="text-[11px] font-medium leading-tight" style={{ color: s > 0 ? g.color : 'var(--color-text-dim)' }}>
                     {name}
                   </div>
-                  <div className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                  <div className="text-[10px] text-[var(--color-text-dim)] mt-1">
                     {s > 0 ? `${s}★ · ${STAR_CUM_COST[s]}💎 in` : 'not owned'}
                   </div>
                 </div>

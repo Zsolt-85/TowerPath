@@ -92,38 +92,42 @@ export function PlannerTab() {
               {source === 'server' ? 'Backend engine · live' : 'Local engine · backend offline'}
             </span>
           </div>
-          <div className="space-y-2">
-            {ordered.map((r, i) => {
-              const canAfford = r.currency === 'stones' ? stones >= r.cost : coins >= r.cost;
-              return (
-                <div
-                  key={r.name}
-                  className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
-                    i === 0
-                      ? 'bg-gradient-to-r from-[rgba(240,165,0,0.08)] to-transparent border-l-2 border-[var(--color-gold)]'
-                      : 'hover:bg-[var(--color-bg-card-hover)]'
-                  } ${canAfford ? '' : 'opacity-60'}`}
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center font-['Orbitron'] font-bold text-sm bg-[var(--color-gold)] text-[var(--color-bg-deep)]">
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold">{r.name}</div>
-                    <div className="text-xs text-[var(--color-text-dim)] mt-0.5">{r.desc}</div>
-                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--color-teal)' }}>{r.impact}</div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="font-['Orbitron'] text-sm font-bold">
-                      {r.cost.toLocaleString()} {r.currency === 'stones' ? '◇' : '©'}
+          {ordered.length === 0 ? (
+            <div className="text-sm text-[var(--color-text-muted)] py-6 text-center">Computing recommendations…</div>
+          ) : (
+            <div className="space-y-2">
+              {ordered.map((item, i) => {
+                const canAfford = item.currency === 'stones' ? stones >= item.cost : coins >= item.cost;
+                return (
+                  <div
+                    key={item.name}
+                    className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
+                      i === 0
+                        ? 'bg-gradient-to-r from-[rgba(240,165,0,0.08)] to-transparent border-l-2 border-[var(--color-gold)]'
+                        : 'hover:bg-[var(--color-bg-card-hover)]'
+                    } ${canAfford ? '' : 'opacity-60'}`}
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center font-['Orbitron'] font-bold text-sm bg-[var(--color-gold)] text-[var(--color-bg-deep)]">
+                      {i + 1}
                     </div>
-                    <div className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${canAfford ? 'text-[var(--color-teal)]' : 'text-[var(--color-red)]'}`}>
-                      {canAfford ? 'Affordable' : 'Save up'}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold">{item.name}</div>
+                      <div className="text-xs text-[var(--color-text-dim)] mt-0.5">{item.desc}</div>
+                      <div className="text-[11px] mt-0.5" style={{ color: 'var(--color-teal)' }}>{item.impact}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-['Orbitron'] text-sm font-bold">
+                        {item.cost.toLocaleString()} {item.currency === 'stones' ? '◇' : '©'}
+                      </div>
+                      <div className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${canAfford ? 'text-[var(--color-teal)]' : 'text-[var(--color-red)]'}`}>
+                        {canAfford ? 'Affordable' : 'Save up'}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="space-y-5">
@@ -152,7 +156,7 @@ export function PlannerTab() {
             </div>
             <p className="text-[11px] text-[var(--color-text-muted)] mt-4 leading-relaxed">
               Rule of thumb from the Effective Paths sheet: sync GT/BH first (it multiplies everything),
-              then economy until coin income doubles roughly every 2–3 days, then damage to push waves.
+              then economy until income stalls, then damage to push waves.
             </p>
           </div>
           <div className="rounded-2xl border border-[rgba(240,165,0,0.3)] bg-gradient-to-br from-[rgba(240,165,0,0.1)] to-[rgba(0,212,170,0.1)] p-6">

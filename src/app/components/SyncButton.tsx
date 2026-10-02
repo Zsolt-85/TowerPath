@@ -47,10 +47,6 @@ export function SyncButton() {
   const [lastSync, setLastSync] = useState(readLastSync);
   const autoRan = useRef(false);
 
-  useEffect(() => {
-    checkSyncBackend().then(setBackend);
-  }, []);
-
   const markSynced = useCallback(() => {
     const now = Date.now();
     setLastSync(now);
@@ -59,6 +55,10 @@ export function SyncButton() {
     } catch {
       // ignore
     }
+  }, []);
+
+  useEffect(() => {
+    checkSyncBackend().then(setBackend);
   }, []);
 
   const doPull = useCallback(
@@ -122,7 +122,7 @@ export function SyncButton() {
       if (pulled.ok && !pulled.empty && pulled.bundle) {
         const { merged } = mergePulledBundle(pulled.bundle);
         markSynced();
-        setMsg(`Connected ✓ merged in (${merged.join(', ') || 'nothing new'})`);
+        setMsg(`Connected ✓ merged in (${merged.join(', ')})`);
       } else {
         const pushed = await pushBundle(bucket, collectLocalBundle());
         if (!pushed.ok) {
@@ -190,11 +190,12 @@ export function SyncButton() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="font-['Orbitron'] text-lg font-bold mb-1">Cloud sync</h2>
-            <p className="text-xs text-[var(--color-text-muted)] mb-5 leading-relaxed">
+            <p className="text-xs text-[var(--color-text-muted)] mb-5">
               {backend === false
                 ? 'The sync store is not configured on the server yet. Everything still works locally.'
                 : 'Same passphrase on every device = same data. The phrase never leaves your browser; only its hash identifies your bucket. Runs merge by id; other collections follow the newest sync.'}
             </p>
+
             {backend !== false && !hasPass && (
               <>
                 <label className="text-xs text-[var(--color-text-muted)] block mb-2">Sync passphrase (min 8 characters)</label>
@@ -203,12 +204,12 @@ export function SyncButton() {
                   value={pass}
                   onChange={(e) => setPass(e.target.value)}
                   placeholder="e.g. tower-farmer-…"
-                  className="w-full px-4 py-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text)] text-sm focus:border-[var(--color-teal)] focus:outline-none transition-all mb-4"
+                  className="w-full px-4 py-2 rounded-lg border border-[var(--color-gold-dim)] text-[var(--color-gold)] text-sm hover:bg-[var(--color-gold-glow)] transition-all"
                 />
                 <button
                   onClick={enable}
                   disabled={busy != null}
-                  className="w-full px-4 py-3 rounded-xl bg-[var(--color-teal)] text-[var(--color-bg-deep)] text-sm font-bold hover:brightness-110 transition-all disabled:opacity-50"
+                  className="w-full mt-4 px-4 py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-bg-deep)] font-bold text-sm hover:bg-[#ffc000] transition-all disabled:opacity-50"
                 >
                   {busy ? 'Working…' : 'Enable sync'}
                 </button>
@@ -219,14 +220,14 @@ export function SyncButton() {
                 <button
                   onClick={pushNow}
                   disabled={busy != null}
-                  className="flex-1 px-4 py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-bg-deep)] text-sm font-bold hover:bg-[#ffc000] transition-all disabled:opacity-50"
+                  className="flex-1 px-4 py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-bg-deep)] font-bold text-sm hover:bg-[#ffc000] transition-all disabled:opacity-50"
                 >
                   {busy === 'push' ? 'Pushing…' : '⬆ Push'}
                 </button>
                 <button
                   onClick={pullNow}
                   disabled={busy != null}
-                  className="flex-1 px-4 py-3 rounded-xl border border-[var(--color-border)] text-sm hover:border-[var(--color-teal)] hover:text-[var(--color-teal)] transition-all disabled:opacity-50"
+                  className="flex-1 px-4 py-3 rounded-xl border border-[var(--color-border)] text-sm hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-all"
                 >
                   {busy === 'pull' ? 'Pulling…' : '⬇ Pull'}
                 </button>

@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useLocalStorage, formatBig } from '../hooks/useLocalStorage';
-import { LineChart } from './charts';
+import { useState } from 'react';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export const LEAGUES = ['Copper', 'Silver', 'Gold', 'Platinum', 'Champion', 'Legend', 'Mythic'] as const;
 
@@ -16,8 +15,6 @@ export interface Tournament {
   diedTo: string;
   durationMin: number;
 }
-
-const DIED_TO = ['Boss', 'Ranged', 'Ray', 'Vampire', 'Scatter', 'Tank', 'Fast', 'Elite', 'Other'];
 
 const PREP_ITEMS = [
   'Tournament card loadout equipped',
@@ -36,7 +33,7 @@ export function TournamentTab() {
   const [tournaments, setTournaments] = useLocalStorage<Tournament[]>('towerpath:tournaments', []);
   const [checks, setChecks] = useLocalStorage<Record<string, boolean>>('towerpath:tourney:prep', {});
 
-  const [league, setLeague] = useState<string>('Gold');
+  const [league, setLeague] = useState('Gold');
   const [tier, setTier] = useState(10);
   const [rank, setRank] = useState(15);
   const [wave, setWave] = useState(2000);
@@ -44,10 +41,9 @@ export function TournamentTab() {
   const [durationMin, setDurationMin] = useState(45);
   const [formOpen, setFormOpen] = useState(false);
 
-  const chrono = useMemo(() => [...tournaments].reverse(), [tournaments]);
-  const bestRank = useMemo(() => tournaments.reduce((m, t) => Math.min(m, t.rank), Infinity), [tournaments]);
-  const bestWave = useMemo(() => tournaments.reduce((m, t) => Math.max(m, t.wave), 0), [tournaments]);
-  const leaguesClimbed = useMemo(() => new Set(tournaments.map((t) => t.league)).size, [tournaments]);
+  const chrono = [...tournaments].reverse();
+  const bestRank = tournaments.reduce((m, t) => Math.min(m, t.rank), Infinity);
+  const bestWave = tournaments.reduce((m, t) => Math.max(m, t.wave), 0);
 
   const save = () => {
     const t: Tournament = {
@@ -73,7 +69,7 @@ export function TournamentTab() {
           { label: 'Tournaments', value: String(tournaments.length) },
           { label: 'Best Rank', value: bestRank === Infinity ? '—' : `#${bestRank}` },
           { label: 'Best Wave', value: bestWave > 0 ? bestWave.toLocaleString() : '—' },
-          { label: 'Leagues Climbed', value: `${leaguesClimbed}/${LEAGUES.length}` },
+          { label: 'Leagues Climbed', value: `${new Set(tournaments.map((t) => t.league)).size}/${7}` },
         ].map((s, i) => (
           <div key={i} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5">
             <div className="text-[11px] uppercase tracking-[1.5px] text-[var(--color-text-muted)]">{s.label}</div>
@@ -88,23 +84,31 @@ export function TournamentTab() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Rank over time · lower is better</div>
-              <LineChart
-                series={[{
-                  label: 'Rank',
-                  color: 'var(--color-gold)',
-                  points: chrono.map((t) => ({ x: new Date(t.date).toLocaleDateString(), y: t.rank, hint: `${t.league} T${t.tier}` })),
-                }]}
-              />
+              <div className="h-64">
+                <svg viewBox="0 0 400 200" className="w-full h-full">
+                  {chrono.length > 1 && (
+                    <>
+                      <polyline
+                        fill="none"
+                        stroke="var(--color-gold)"
+                        strokeWidth="2"
+                        points={chrono.map((t, i) => `${i * (380 / Math.max(1, chrono.length - 1))},${180 - (t.rank - 1) * 10}`).join(' ')}
+                      />
+                      {chrono.map((t, i) => (
+                        <circle key={t.id} cx={i * (380 / Math.max(1, chrono.length - 1))} cy={180 - (t.rank - 1) * 10} r={4} fill="var(--color-gold)" />
+                      ))}
+                    </>
+                  )}
+                </svg>
+              </div>
             </div>
             <div>
               <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Wave over time</div>
-              <LineChart
-                series={[{
-                  label: 'Wave',
-                  color: 'var(--color-teal)',
-                  points: chrono.map((t) => ({ x: new Date(t.date).toLocaleDateString(), y: t.wave, hint: `${t.league} #${t.rank}` })),
-                }]}
-              />
+              <svg viewBox="0 0 400 200" className="w-full h-64">
+                {chrono.map((t, i) => (
+                  <circle key={t.id} cx={i * (380 / Math.max(1, chrono.length - 1))} cy={180 - Math.min(180, t.wave / 50)} r={4} fill="var(--color-teal)" />
+                ))}
+              </svg>
             </div>
           </div>
         </div>
@@ -115,10 +119,10 @@ export function TournamentTab() {
           <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
             <h2 className="font-['Orbitron'] text-lg font-bold">Tournament history</h2>
             <button
-              onClick={() => setFormOpen((v) => !v)}
+              onClick={() => setFormOpen(true)}
               className="text-xs text-[var(--color-gold)] border border-[var(--color-gold-dim)] rounded-lg px-4 py-2 hover:bg-[var(--color-gold-glow)] transition-all"
             >
-              {formOpen ? 'Cancel' : '＋ Log tournament'}
+              ＋ Log tournament
             </button>
           </div>
           {formOpen && (
@@ -127,13 +131,17 @@ export function TournamentTab() {
                 <div>
                   <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">League</label>
                   <select value={league} onChange={(e) => setLeague(e.target.value)} className={inputCls}>
-                    {LEAGUES.map((l) => (<option key={l} value={l}>{l}</option>))}
+                    {['Copper', 'Silver', 'Gold', 'Platinum', 'Champion', 'Legend', 'Mythic'].map((l) => (
+                      <option key={l} value={l}>{l}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">Died to</label>
                   <select value={diedTo} onChange={(e) => setDiedTo(e.target.value)} className={inputCls}>
-                    {DIED_TO.map((d) => (<option key={d} value={d}>{d}</option>))}
+                    {['Boss', 'Ranged', 'Ray', 'Vampire', 'Scatter', 'Tank', 'Fast', 'Elite', 'Other'].map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
                   </select>
                 </div>
                 {[
@@ -208,7 +216,7 @@ export function TournamentTab() {
                 </button>
               );
             })}
-          </div>
+            </div>
           <button
             onClick={() => setChecks({})}
             className="mt-4 text-xs text-[var(--color-text-dim)] border border-[var(--color-border)] rounded-lg px-4 py-2 hover:text-[var(--color-text)] transition-all"
@@ -216,7 +224,7 @@ export function TournamentTab() {
             Reset for next tournament
           </button>
           <div className="mt-5 text-xs text-[var(--color-text-dim)]">
-            Best so far: {bestRank === Infinity ? '—' : `#${bestRank}`} · {bestWave > 0 ? `${formatBig(bestWave)} wave` : 'no waves yet'}
+            Best so far: {bestRank === Infinity ? '—' : `#${bestRank}`} · {bestWave > 0 ? `${bestWave.toLocaleString()} wave` : 'no waves yet'}
           </div>
         </div>
       </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { ULTIMATE_WEAPONS, ULTIMATE_WEAPON_NAMES } from '../data/ultimate-weapons-data';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
@@ -41,7 +40,7 @@ export function UWTab() {
     'Black Hole': true,
   });
 
-  const names = useMemo(() => [...ULTIMATE_WEAPON_NAMES], []);
+  const names = [...ULTIMATE_WEAPON_NAMES];
   const unlockedCount = names.filter((n) => unlocked[n]).length;
   const syncedCount = names.filter((n) => synced[n] && unlocked[n]).length;
 
@@ -95,11 +94,9 @@ export function UWTab() {
                 }`}
                 title={isUnlocked ? 'Click to mark locked' : 'Click to mark unlocked'}
               >
-                <div
-                  className={`w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-xl ${
-                    isSynced ? 'bg-[var(--color-teal-glow)] text-[var(--color-teal)]' : 'bg-[var(--color-gold-glow)] text-[var(--color-gold)]'
-                  }`}
-                >
+                <div className={`w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-xl ${
+                  isSynced ? 'bg-[var(--color-teal-glow)] text-[var(--color-teal)]' : 'bg-[var(--color-gold-glow)] text-[var(--color-gold)]'
+                }`}>
                   {ICONS[name] ?? '◇'}
                 </div>
                 <div className="text-sm font-semibold">{name}</div>

@@ -4,14 +4,15 @@ export interface NavItem {
   id: string;
   label: string;
   icon: string;
+  badge?: number | string;
 }
 
 export interface NavSection {
   title: string;
-  items: NavItem[];
+  items: { id: string; label: string; icon: string; badge?: number | string }[];
 }
 
-export const NAV: NavSection[] = [
+export const NAV_SECTIONS = [
   {
     title: 'Track',
     items: [
@@ -32,7 +33,7 @@ export const NAV: NavSection[] = [
     title: 'Collect',
     items: [{ id: 'cards', label: 'Cards', icon: '🂡' }],
   },
-];
+] as const;
 
 export function Sidebar({
   active,
@@ -47,17 +48,38 @@ export function Sidebar({
 }) {
   return (
     <>
-      {open && <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={onClose} />}
+      {/* Mobile overlay */}
+      {open && (
+        <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={onClose} />
+      )}
+
       <aside
-        className={`fixed z-40 inset-y-0 left-0 w-60 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-bg-card)]/95 backdrop-blur px-4 py-6 transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed z-40 inset-y-0 left-0 w-60 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-bg-card)]/95 backdrop-blur px-4 py-6 transition-transform duration-300 ease-out lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
+        aria-label="Main navigation"
       >
+        {/* Logo */}
         <div className="font-['Orbitron'] text-2xl font-black tracking-widest px-2 mb-8">
           Tower<span style={{ color: 'var(--color-gold)' }}>Path</span>
         </div>
-        <nav className="flex-1 space-y-6 overflow-y-auto">
-          {NAV.map((section) => (
+
+        <nav className="flex-1 space-y-6 overflow-y-auto" aria-label="Main navigation">
+          {([
+            { title: 'Track', items: [
+              { id: 'dashboard', label: 'Dashboard', icon: '◈' },
+              { id: 'tracker', label: 'Runs', icon: '▤' },
+              { id: 'tourney', label: 'Tournament', icon: '🏆' },
+            ]},
+            { title: 'Plan', items: [
+              { id: 'planner', label: 'Path Planner', icon: '🧭' },
+              { id: 'uw', label: 'Ultimate Weapons', icon: '✦' },
+              { id: 'sync', label: 'Sync Calc', icon: '◉' },
+            ]},
+            { title: 'Collect', items: [
+              { id: 'cards', label: 'Cards', icon: '🂡' },
+            ]},
+          ]).map((section) => (
             <div key={section.title}>
               <div className="text-[10px] uppercase tracking-[2px] text-[var(--color-text-muted)] px-3 mb-2">
                 {section.title}
@@ -68,18 +90,15 @@ export function Sidebar({
                   return (
                     <button
                       key={item.id}
-                      onClick={() => {
-                        onNav(item.id);
-                        onClose();
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-l-2 ${
+                      onClick={() => { onNav(item.id); onClose(); }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap border-l-2 ${
                         isActive
                           ? 'bg-[var(--color-gold-glow)] text-[var(--color-gold)] border-[var(--color-gold)] font-bold'
                           : 'text-[var(--color-text-dim)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card-hover)] border-transparent'
                       }`}
                     >
                       <span className="w-6 text-center">{item.icon}</span>
-                      {item.label}
+                      <span className="flex-1 truncate">{item.label}</span>
                     </button>
                   );
                 })}
@@ -87,8 +106,10 @@ export function Sidebar({
             </div>
           ))}
         </nav>
+
+        {/* Footer */}
         <div className="pt-4 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)] px-3 leading-relaxed">
-          Local-first tracker.
+          TowerPath v1.0 · Local-first tracker
           <br />
           Data never leaves your browser unless you enable cloud sync.
         </div>
