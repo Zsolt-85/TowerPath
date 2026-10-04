@@ -66,21 +66,7 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 space-y-6 overflow-y-auto" aria-label="Main navigation">
-          {([
-            { title: 'Track', items: [
-              { id: 'dashboard', label: 'Dashboard', icon: '◈' },
-              { id: 'tracker', label: 'Runs', icon: '▤' },
-              { id: 'tourney', label: 'Tournament', icon: '🏆' },
-            ]},
-            { title: 'Plan', items: [
-              { id: 'planner', label: 'Path Planner', icon: '🧭' },
-              { id: 'uw', label: 'Ultimate Weapons', icon: '✦' },
-              { id: 'sync', label: 'Sync Calc', icon: '◉' },
-            ]},
-            { title: 'Collect', items: [
-              { id: 'cards', label: 'Cards', icon: '🂡' },
-            ]},
-          ]).map((section) => (
+          {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               <div className="text-[10px] uppercase tracking-[2px] text-[var(--color-text-muted)] px-3 mb-2">
                 {section.title}
