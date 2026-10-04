@@ -9,6 +9,7 @@ import { UWTab } from './components/UWTab';
 import { SyncTab } from './components/SyncTab';
 import { TournamentTab } from './components/TournamentTab';
 import { RunView } from './components/RunView';
+import { LabPlannerTab } from './components/LabPlannerTab';
 import { Sidebar } from './components/Sidebar';
 import { SyncButton } from './components/SyncButton';
 import { useRuns } from './hooks/useLocalStorage';
@@ -22,6 +23,7 @@ const TITLES: Record<string, string> = {
   uw: 'Ultimate Weapons',
   sync: 'Sync Calc',
   tourney: 'Tournament',
+  labs: 'Lab Planner',
 };
 
 export default function TowerPathPage() {
@@ -94,6 +96,7 @@ export default function TowerPathPage() {
           )}
           {activeTab === 'planner' && <PlannerTab />}
           {activeTab === 'tracker' && <TrackerTab onLogRun={() => setLogOpen(true)} onOpenRun={openRun} />}
+          {activeTab === 'labs' && <LabPlannerTab />}
           {activeTab === 'run' &&
             (selectedRun ? (
               <RunView run={selectedRun} avgCph={avgCph} onBack={() => goTab('tracker')} />
