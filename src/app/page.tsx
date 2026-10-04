@@ -10,6 +10,7 @@ import { SyncTab } from './components/SyncTab';
 import { TournamentTab } from './components/TournamentTab';
 import { RunView } from './components/RunView';
 import { LabPlannerTab } from './components/LabPlannerTab';
+import { MilestonesTab } from './components/MilestonesTab';
 import { Sidebar } from './components/Sidebar';
 import { SyncButton } from './components/SyncButton';
 import { useRuns } from './hooks/useLocalStorage';
@@ -24,6 +25,7 @@ const TITLES: Record<string, string> = {
   sync: 'Sync Calc',
   tourney: 'Tournament',
   labs: 'Lab Planner',
+  milestones: 'Milestones',
 };
 
 export default function TowerPathPage() {
@@ -97,6 +99,7 @@ export default function TowerPathPage() {
           {activeTab === 'planner' && <PlannerTab />}
           {activeTab === 'tracker' && <TrackerTab onLogRun={() => setLogOpen(true)} onOpenRun={openRun} />}
           {activeTab === 'labs' && <LabPlannerTab />}
+          {activeTab === 'milestones' && <MilestonesTab />}
           {activeTab === 'run' &&
             (selectedRun ? (
               <RunView run={selectedRun} avgCph={avgCph} onBack={() => goTab('tracker')} />
