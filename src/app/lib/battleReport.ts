@@ -442,3 +442,59 @@ export function parseFullReport(text: string): FullParse {
     stats: { fieldsParsed, sectionsFound: [...sectionsFound], unmapped },
   };
 }
+
+export interface ReportKindDetection {
+  kind: 'tournament' | 'farm';
+  signals: string[];
+  league: string | null;
+  rank: number | null;
+}
+
+const LEAGUE_NAMES = ['Copper', 'Silver', 'Gold', 'Platinum', 'Champion', 'Legend', 'Mythic'];
+
+/**
+ * Guess whether a pasted report is a tournament or farm run from text markers.
+ * Word boundaries keep "Golden Tower" / "golden combo" from matching "Gold".
+ * Returns null when the text says nothing either way — caller keeps manual choice.
+ */
+export function detectReportKind(text: string): ReportKindDetection | null {
+  let tScore = 0;
+  let fScore = 0;
+  const signals: string[] = [];
+  let league: string | null = null;
+  let rank: number | null = null;
+
+  if (/\btournament\b/i.test(text)) {
+    tScore += 3;
+    signals.push('“Tournament”');
+  }
+  for (const name of LEAGUE_NAMES) {
+    if (new RegExp(`\\b${name}\\b`, 'i').test(text)) {
+      tScore += 2;
+      signals.push(`league “${name}”`);
+      league = name;
+      break;
+    }
+  }
+  const rankMatch = text.match(/\brank\s*#?(\d{1,4})\b/i);
+  if (rankMatch) {
+    tScore += 2;
+    signals.push(`rank #${rankMatch[1]}`);
+    rank = Number(rankMatch[1]);
+  }
+  if (/\bplacement\b/i.test(text)) {
+    tScore += 2;
+    signals.push('“placement”');
+  }
+  if (/\bfarming\b/i.test(text)) {
+    fScore += 2;
+    signals.push('“farming”');
+  } else if (/\bfarm\b/i.test(text)) {
+    fScore += 2;
+    signals.push('“farm”');
+  }
+
+  if (tScore >= 3 && tScore > fScore) return { kind: 'tournament', signals, league, rank };
+  if (fScore > 0 && fScore >= tScore) return { kind: 'farm', signals, league: null, rank: null };
+  return null;
+}

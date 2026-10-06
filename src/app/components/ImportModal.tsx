@@ -7,7 +7,8 @@ import {
   restoreBackup,
   type BackupData,
 } from '../lib/import';
-import { parseFullReport } from '../lib/battleReport';
+import { parseFullReport, detectReportKind } from '../lib/battleReport';
+import { LEAGUES, type Tournament } from './TournamentTab';
 import type { RunType } from '../hooks/useLocalStorage';
 import { useRuns, formatBig, type Run } from '../hooks/useLocalStorage';
 import { decodeSaveFile, type DecodedAccount } from '../lib/playersave';
@@ -159,12 +160,16 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
 
   const [runType, setRunType] = useState<RunType>('farm');
   const parsed = useMemo(() => (text.trim() ? parseFullReport(text) : null), [text]);
+  const detection = useMemo(() => (text.trim() ? detectReportKind(text) : null), [text]);
 
   const [tier, setTier] = useState<number | null>(null);
   const [wave, setWave] = useState<number | null>(null);
   const [coins, setCoins] = useState<number | null>(null);
   const [cells, setCells] = useState<number | null>(null);
   const [durationMin, setDurationMin] = useState<number | null>(null);
+  const [league, setLeague] = useState<string>('Gold');
+  const [rank, setRank] = useState<number | null>(null);
+  const [diedTo, setDiedTo] = useState<string>('Ranged');
 
   // Seed editable fields when a new paste is parsed. This is React's
   // documented "adjust state during render" pattern: it re-renders immediately
@@ -183,14 +188,42 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
     setDurationMin(parsed.durationMin);
   }
 
+  // Auto-apply the detected kind once per change; manual override sticks
+  // until the pasted text detects a different kind.
+  const [detectKindKey, setDetectKindKey] = useState('');
+  const [detectFieldKey, setDetectFieldKey] = useState('');
+  const kindSig = detection?.kind ?? '';
+  const fieldSig = detection
+    ? [...detection.signals, detection.league ?? '', String(detection.rank ?? '')].join('|')
+    : '';
+  if (kindSig !== detectKindKey) {
+    setDetectKindKey(kindSig);
+    if (detection) setRunType(detection.kind);
+  }
+  if (detection && fieldSig !== detectFieldKey) {
+    setDetectFieldKey(fieldSig);
+    if (detection.league && (LEAGUES as readonly string[]).includes(detection.league)) {
+      setLeague(detection.league);
+    }
+    if (detection.rank != null) setRank(detection.rank);
+  }
+
   if (!open) return null;
 
-  const valid = tier != null && tier > 0 && wave != null && wave > 0 && coins != null && coins >= 0;
+  const valid =
+    tier != null &&
+    tier > 0 &&
+    wave != null &&
+    wave > 0 &&
+    coins != null &&
+    coins >= 0 &&
+    (runType !== 'tournament' || (rank != null && rank > 0));
 
   const savePaste = () => {
     if (!valid) return;
+    const id = `${Date.now()}`;
     const run: Run = {
-      id: `${Date.now()}`,
+      id,
       date: new Date().toISOString(),
       tier,
       wave,
@@ -203,9 +236,26 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
       detail: parsed && Object.keys(parsed.detail).length > 0 ? parsed.detail : undefined,
     };
     setRuns((prev) => [run, ...prev].slice(0, 500));
+    if (runType === 'tournament') {
+      const entry: Tournament = {
+        id,
+        date: run.date,
+        league,
+        tier,
+        rank: rank ?? 0,
+        wave,
+        diedTo,
+        durationMin: run.durationMin,
+      };
+      const prevT = readStore<Tournament[]>('towerpath:tournaments', []);
+      writeStore('towerpath:tournaments', [entry, ...prevT].slice(0, 256));
+      setSavedMsg('Tournament imported ✓ (run + tournament record)');
+    } else {
+      setSavedMsg('Run imported ✓');
+    }
     setText('');
     setStrategy('');
-    setSavedMsg('Run imported ✓');
+    setRunType('farm');
     setTimeout(() => setSavedMsg(''), 2500);
   };
 
@@ -289,6 +339,12 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
                   {parsed.stats.fieldsParsed} fields across {parsed.stats.sectionsFound.length} sections
                   {parsed.stats.unmapped.length > 0 ? ` · ${parsed.stats.unmapped.length} unparsed (${parsed.stats.unmapped.slice(0, 3).join('; ')}${parsed.stats.unmapped.length > 3 ? '…' : ''})` : ' · everything mapped ✓'}
                 </div>
+                {detection && (
+                  <div className="text-xs mb-4 font-semibold" style={{ color: 'var(--color-gold)' }}>
+                    Detected: {detection.kind === 'tournament' ? 'Tournament' : 'Farm run'} — found{' '}
+                    {detection.signals.join(', ')} (auto-set, you can override below)
+                  </div>
+                )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     { label: 'Tier', value: tier, set: setTier, bad: tier == null, fmt: false },
@@ -334,6 +390,37 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
                     </select>
                   </div>
                 </div>
+                {runType === 'tournament' && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+                    <div>
+                      <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">League</label>
+                      <select value={league} onChange={(e) => setLeague(e.target.value)} className={inputCls}>
+                        {LEAGUES.map((l) => (
+                          <option key={l} value={l}>{l}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">Rank</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={rank ?? ''}
+                        placeholder="—"
+                        onChange={(e) => setRank(numOrNull(e.target.value))}
+                        className={`${inputCls} ${rank == null ? '!border-[var(--color-red)]' : ''}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">Died to</label>
+                      <select value={diedTo} onChange={(e) => setDiedTo(e.target.value)} className={inputCls}>
+                        {['Boss', 'Ranged', 'Ray', 'Vampire', 'Scatter', 'Tank', 'Fast', 'Elite', 'Other'].map((d) => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="flex items-center gap-3 mt-6">
@@ -342,7 +429,7 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
                 disabled={!valid}
                 className="flex-1 px-4 py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-bg-deep)] text-sm font-bold hover:bg-[#ffc000] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Save Run
+                {runType === 'tournament' ? 'Save Tournament' : 'Save Run'}
               </button>
               <button
                 onClick={onClose}
