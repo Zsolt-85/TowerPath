@@ -27,6 +27,7 @@ export const NAV_SECTIONS = [
     items: [
       { id: 'planner', label: 'Path Planner', icon: '🧭' },
       { id: 'labs', label: 'Lab Planner', icon: '⚗' },
+      { id: 'workshop', label: 'Workshop', icon: '⚒' },
       { id: 'uw', label: 'Ultimate Weapons', icon: '✦' },
       { id: 'sync', label: 'Sync Calc', icon: '◉' },
     ],
