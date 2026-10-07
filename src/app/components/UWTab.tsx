@@ -2,6 +2,7 @@
 
 import { ULTIMATE_WEAPONS, ULTIMATE_WEAPON_NAMES } from '../data/ultimate-weapons-data';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { UWPlanner } from './UWPlanner';
 
 const ICONS: Record<string, string> = {
   'Death Wave': '⊡',
@@ -123,6 +124,7 @@ export function UWTab() {
           })}
         </div>
       </div>
+      <UWPlanner />
     </div>
   );
 }
