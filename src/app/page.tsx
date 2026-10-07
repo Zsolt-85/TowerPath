@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardTab, LogRunModal } from './components/DashboardTab';
 import { PlannerTab } from './components/PlannerTab';
 import { TrackerTab } from './components/TrackerTab';
@@ -15,6 +15,8 @@ import { MilestonesTab } from './components/MilestonesTab';
 import { Sidebar } from './components/Sidebar';
 import { SyncButton } from './components/SyncButton';
 import { useRuns } from './hooks/useLocalStorage';
+import { recordSnapshot, LAST_KEY } from './lib/snapshots';
+import type { Tournament } from './components/TournamentTab';
 
 const TITLES: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -36,6 +38,26 @@ export default function TowerPathPage() {
   const [sideOpen, setSideOpen] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [runs] = useRuns();
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    let last = '';
+    try {
+      last = localStorage.getItem(LAST_KEY) ?? '';
+    } catch {
+      last = '';
+    }
+    if (last === today) return;
+    let tournaments: Tournament[] = [];
+    try {
+      const raw = localStorage.getItem('towerpath:tournaments');
+      const arr = raw != null ? (JSON.parse(raw) as Tournament[]) : [];
+      if (Array.isArray(arr)) tournaments = arr;
+    } catch {
+      tournaments = [];
+    }
+    recordSnapshot(runs, tournaments);
+  }, [runs]);
 
   const openRun = (id: string) => {
     setRunId(id);

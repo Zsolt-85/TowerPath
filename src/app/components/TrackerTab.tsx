@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRuns, formatBig, type Run } from '../hooks/useLocalStorage';
+import { getSnapshots, deltas, series } from '../lib/snapshots';
 import { LineChart } from './charts';
 import { ImportModal } from './ImportModal';
 import { collectBackup, downloadFile, STRATEGIES } from '../lib/import';
@@ -54,6 +55,10 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
     perHour: runs.slice(0, 15).reverse().map((r) => ({ x: `T${r.tier} ${r.wave}`, y: metricCph(r), hint: `${r.strategy ?? ''} ` })),
   };
 
+  const snaps = useMemo(() => getSnapshots(), [runs]);
+  const prog = useMemo(() => deltas(snaps), [snaps]);
+  const waveSeries = useMemo(() => series(snaps, 'bestWave'), [snaps]);
+
   const exportJSON = () => {
     const backup = collectBackup();
     downloadFile(`towerpath-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(backup, null, 2), 'application/json');
@@ -84,6 +89,38 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
           </div>
         ))}
       </div>
+
+      {prog ? (
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-6">
+          <h2 className="font-['Orbitron'] text-lg font-bold mb-4">Progression · last {prog.days} days</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            {[
+              { label: 'Wave gain', value: prog.waveGain >= 0 ? `+${prog.waveGain.toLocaleString()}` : String(prog.waveGain) },
+              { label: 'Coins gained', value: `+${formatBig(Math.max(0, prog.coinsGain))}` },
+              { label: 'CPH growth', value: prog.cphGrowth != null ? `${prog.cphGrowth.toFixed(2)}x` : '—' },
+              { label: 'Snapshots', value: String(snaps.length) },
+            ].map((s) => (
+              <div key={s.label} className="rounded-xl border border-[var(--color-border)] p-4">
+                <div className="text-[11px] uppercase tracking-[1.5px] text-[var(--color-text-muted)]">{s.label}</div>
+                <div className="font-['Orbitron'] text-xl font-bold mt-1">{s.value}</div>
+              </div>
+            ))}
+          </div>
+          <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Best wave per day</div>
+          <div className="flex items-end gap-1 h-24">
+            {waveSeries.map((p) => {
+              const max = Math.max(1, ...waveSeries.map((q) => q.value));
+              return (
+                <div key={p.date} title={`${p.date}: ${p.value.toLocaleString()}`} className="flex-1 rounded-sm bg-[var(--color-gold)]" style={{ height: `${Math.max(4, (p.value / max) * 100)}%` }} />
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Progression unlocks after 2 days of snapshots — {snaps.length}/2 recorded.
+        </p>
+      )}
 
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
