@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { useLocalStorage, formatBig } from '../hooks/useLocalStorage';
-import { ALL_LABS, LAB_GROUPS, labsDurationMap } from '../data/labs-data';
+import { ALL_LABS, labsDurationMap } from '../data/labs-data';
+import { labLevelSeconds, maxLevelFor, slotEtaDays, labGroupOf } from '../lib/labs';
 
 const SLOT_COUNT = 5;
 const STORE_KEY = 'towerpath:lab-planner-v2';
@@ -47,70 +48,10 @@ const PRIORITY_WEIGHT: Record<string, number> = {
   Range: 50,
 };
 
-function groupOf(lab: string): string {
-  const groups = LAB_GROUPS as Record<string, string[]>;
-  for (const g of Object.keys(groups)) {
-    if (groups[g].includes(lab)) return g;
-  }
-  return 'Main Labs';
-}
-
-function durationEntry(lab: string, level: number): number | null {
-  try {
-    const table = (labsDurationMap as Record<string, unknown>)[lab] as
-      | Record<string, unknown>
-      | undefined;
-    if (!table) return null;
-    const raw = table[String(level)];
-    if (typeof raw === 'number') return raw;
-    if (raw != null && typeof raw === 'object') {
-      const d = (raw as Record<string, unknown>).DURATION;
-      if (typeof d === 'number') return d;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function estimateSeconds(lab: string, level: number): number {
-  const known = durationEntry(lab, level);
-  if (known != null && isFinite(known) && known > 0) return known;
-  const g = groupOf(lab);
-  const base = g === 'Main Labs' ? 900 : g === 'Ultimate Weapon Labs' ? 2400 : 600;
-  return base * Math.pow(1.22, Math.min(level, 99));
-}
-
-function maxLevelFor(lab: string): number {
-  try {
-    const table = (labsDurationMap as Record<string, unknown>)[lab] as
-      | Record<string, unknown>
-      | undefined;
-    if (table) {
-      const keys = Object.keys(table)
-        .map((k) => Number(k))
-        .filter((n) => isFinite(n));
-      if (keys.length > 0) return Math.max(...keys);
-    }
-  } catch {
-    // fall through
-  }
-  if (lab === 'Game Speed') return 7;
-  return 99;
-}
-
 function weightFor(lab: string, current: number): number {
-  const base = PRIORITY_WEIGHT[lab] ?? (groupOf(lab) === 'Main Labs' ? 60 : 45);
+  const base = PRIORITY_WEIGHT[lab] ?? (labGroupOf(lab) === 'Main Labs' ? 60 : 45);
   const catchUp = current < 10 ? 1.4 : current < 30 ? 1.15 : 1;
   return base * catchUp;
-}
-
-function hoursToFinish(lab: string, current: number, target: number, effectiveSpeed: number): number {
-  const lo = Math.max(0, Math.min(current, target));
-  const hi = Math.max(lo, target);
-  let secs = 0;
-  for (let l = lo + 1; l <= hi; l += 1) secs += estimateSeconds(lab, l);
-  return secs / 3600 / Math.max(0.1, effectiveSpeed);
 }
 
 function formatHours(h: number): string {
@@ -135,7 +76,7 @@ function buildSuggestions(
     const assumedCurrent = 0;
     const assumedTarget = Math.min(max, lab === 'Game Speed' ? 5 : 20);
     const eff = Math.max(0.1, globalSpeed);
-    const hours = hoursToFinish(lab, assumedCurrent, assumedTarget, eff);
+    const hours = slotEtaDays(lab, assumedCurrent, assumedTarget, eff) * 24;
     const w = weightFor(lab, assumedCurrent);
     const score = w / (hours + 0.5);
     return { lab, hours, score, reason: '' };
@@ -143,7 +84,7 @@ function buildSuggestions(
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, 3).map((s) => ({
     ...s,
-    reason: `${groupOf(s.lab)} · ~${formatHours(s.hours)} to Lv${s.lab === 'Game Speed' ? 5 : 20} · weight ${Math.round(weightFor(s.lab, 0))}`,
+    reason: `${labGroupOf(s.lab)} · ~${formatHours(s.hours)} to Lv${s.lab === 'Game Speed' ? 5 : 20} · weight ${Math.round(weightFor(s.lab, 0))}`,
   }));
 }
 
@@ -170,8 +111,8 @@ export function LabPlannerTab() {
       const max = maxLevelFor(s.lab);
       const target = Math.min(Math.max(s.current, s.target), max);
       const eff = Math.max(0.1, globalSpeed * s.speed);
-      const hours = hoursToFinish(s.lab, s.current, target, eff);
-      const baseHours = hoursToFinish(s.lab, s.current, target, 1);
+      const hours = slotEtaDays(s.lab, s.current, target, eff) * 24;
+      const baseHours = slotEtaDays(s.lab, s.current, target, 1) * 24;
       const saved = baseHours - hours;
       const suggestions = buildSuggestions(safeSlots, globalSpeed, s.lab, activeLabs.filter((_, j) => j !== idx).concat([s.lab]));
       const done = s.current >= target;
@@ -290,7 +231,7 @@ export function LabPlannerTab() {
             >
               {(showAll ? (ALL_LABS as readonly string[]) : (ALL_LABS as readonly string[]).slice(0, 60)).map((lab) => (
                 <option key={lab} value={lab}>
-                  {lab} ({groupOf(lab)})
+                  {lab} ({labGroupOf(lab)})
                 </option>
               ))}
             </select>
