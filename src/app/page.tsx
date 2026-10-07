@@ -5,6 +5,7 @@ import { DashboardTab, LogRunModal } from './components/DashboardTab';
 import { PlannerTab } from './components/PlannerTab';
 import { TrackerTab } from './components/TrackerTab';
 import { CardsTab } from './components/CardsTab';
+import { PresetsTab } from './components/PresetsTab';
 import { UWTab } from './components/UWTab';
 import { SyncTab } from './components/SyncTab';
 import { TournamentTab } from './components/TournamentTab';
@@ -25,6 +26,7 @@ const TITLES: Record<string, string> = {
   tracker: 'Runs',
   run: 'Run detail',
   cards: 'Cards',
+  presets: 'Presets',
   uw: 'Ultimate Weapons',
   sync: 'Sync Calc',
   tourney: 'Tournament',
@@ -139,6 +141,7 @@ export default function TowerPathPage() {
               </div>
             ))}
           {activeTab === 'cards' && <CardsTab />}
+          {activeTab === 'presets' && <PresetsTab />}
           {activeTab === 'uw' && <UWTab />}
           {activeTab === 'sync' && <SyncTab />}
           {activeTab === 'tourney' && <TournamentTab />}

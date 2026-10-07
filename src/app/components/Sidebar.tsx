@@ -35,7 +35,10 @@ export const NAV_SECTIONS = [
   },
   {
     title: 'Collect',
-    items: [{ id: 'cards', label: 'Cards', icon: '🂡' }],
+    items: [
+      { id: 'cards', label: 'Cards', icon: '🂡' },
+      { id: 'presets', label: 'Presets', icon: '🗂' },
+    ],
   },
 ] as const;
 
