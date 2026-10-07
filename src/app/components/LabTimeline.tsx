@@ -20,7 +20,7 @@ function fmtDay(d: number): string {
 
 export function LabTimeline({ slots, globalSpeed }: { slots: SlotLike[]; globalSpeed: number }) {
   const blocks = useMemo(() => buildBlocks(slots, globalSpeed), [slots, globalSpeed]);
-  const horizon = Math.max(1, ...blocks.map((b) => b.endDay), 1);
+  const horizon = Math.max(1, ...blocks.map((b) => b.endDay));
   if (blocks.length === 0) {
     return (
       <p className="text-xs text-[var(--color-text-muted)]">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import {
   createPreset,
@@ -38,6 +38,7 @@ function Manager<T extends AnyPreset>({
   const [draft, setDraft] = useState<Record<string, number>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [rename, setRename] = useState('');
+  const qtyMap = useMemo(() => new Map(allSpecs().map((s) => [s.name, s.quantity] as const)), []);
 
   const bodyOf = (p: T): Record<string, number> =>
     (p as unknown as { stars?: Record<string, number>; levels?: Record<string, number>; picks?: Record<string, number> }).stars ??
@@ -93,7 +94,7 @@ function Manager<T extends AnyPreset>({
             ) : (
               <button onClick={() => { setEditingId(p.id); setRename(p.name); setDraft({ ...bodyOf(p) }); }} className="text-xs border border-[var(--color-border)] rounded-lg px-3 py-2 hover:text-[var(--color-text)] transition-all">Edit</button>
             )}
-            <button onClick={() => setList((prev) => deletePreset(prev, p.id))} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-red)] px-2 py-1 transition-colors">✕</button>
+            <button onClick={() => { if (p.id === activeId) setActiveId(''); setList((prev) => deletePreset(prev, p.id)); }} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-red)] px-2 py-1 transition-colors">✕</button>
           </div>
           {editingId === p.id && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
@@ -103,10 +104,11 @@ function Manager<T extends AnyPreset>({
                   <input
                     type="number"
                     min={0}
-                    max={config.maxPerItem}
+                    max={config.type === 'workshop' ? (qtyMap.get(item) ?? config.maxPerItem) : config.maxPerItem}
                     value={draft[item] ?? 0}
                     onChange={(e) => {
-                      const v = Math.max(0, Math.min(config.maxPerItem, Math.floor(Number(e.target.value) || 0)));
+                      const cap = config.type === 'workshop' ? (qtyMap.get(item) ?? config.maxPerItem) : config.maxPerItem;
+                      const v = Math.max(0, Math.min(cap, Math.floor(Number(e.target.value) || 0)));
                       const next = { ...draft, [item]: v };
                       setDraft(next);
                       setList((prev) => prev.map((q) => (q.id === p.id ? { ...withBody(q as Omit<T, 'id' | 'updatedAt'>, next), id: q.id, updatedAt: q.updatedAt } as unknown as T : q)));

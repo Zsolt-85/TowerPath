@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRuns, formatBig, type Run } from '../hooks/useLocalStorage';
 import { getSnapshots, deltas, series } from '../lib/snapshots';
 import { LineChart } from './charts';
@@ -17,6 +17,13 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [stratFilter, setStratFilter] = useState<string>('all');
   const [metric, setMetric] = useState<'coins' | 'cells'>('coins');
+  const [snapVer, setSnapVer] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setSnapVer((v) => v + 1);
+    window.addEventListener('towerpath:store', bump);
+    return () => window.removeEventListener('towerpath:store', bump);
+  }, []);
 
   const best = runs.reduce((m, r) => Math.max(m, r.wave), 0);
   const totalCoins = runs.reduce((m, r) => m + r.coins, 0);
@@ -55,7 +62,7 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
     perHour: runs.slice(0, 15).reverse().map((r) => ({ x: `T${r.tier} ${r.wave}`, y: metricCph(r), hint: `${r.strategy ?? ''} ` })),
   };
 
-  const snaps = useMemo(() => getSnapshots(), [runs]);
+  const snaps = useMemo(() => getSnapshots(), [runs, snapVer]);
   const prog = useMemo(() => deltas(snaps), [snaps]);
   const waveSeries = useMemo(() => series(snaps, 'bestWave'), [snaps]);
 
@@ -96,7 +103,7 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             {[
               { label: 'Wave gain', value: prog.waveGain >= 0 ? `+${prog.waveGain.toLocaleString()}` : String(prog.waveGain) },
-              { label: 'Coins gained', value: `+${formatBig(Math.max(0, prog.coinsGain))}` },
+              { label: 'Coins gained', value: prog.coinsGain >= 0 ? `+${formatBig(prog.coinsGain)}` : formatBig(prog.coinsGain) },
               { label: 'CPH growth', value: prog.cphGrowth != null ? `${prog.cphGrowth.toFixed(2)}x` : '—' },
               { label: 'Snapshots', value: String(snaps.length) },
             ].map((s) => (

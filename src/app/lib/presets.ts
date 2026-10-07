@@ -42,11 +42,6 @@ export function deletePreset<T extends AnyPreset>(list: T[], id: string): T[] {
   return list.filter((p) => p.id !== id);
 }
 
-export function setActive<T extends AnyPreset>(list: T[], id: string): T[] {
-  if (!list.some((p) => p.id === id)) return list;
-  return list.map((p) => ({ ...p }));
-}
-
 export const PRESET_KEYS: Record<PresetType, string> = {
   cards: 'towerpath:presets:cards',
   workshop: 'towerpath:presets:workshop',

@@ -56,13 +56,15 @@ export function valueAt(spec: WorkshopSpec, level: number): number {
 }
 
 export function levelsForTarget(spec: WorkshopSpec, target: number): number {
-  if (target <= spec.min) return 0;
-  if (target >= spec.max) return spec.quantity;
   if (spec.max === spec.min) return 0;
-  return Math.min(
-    spec.quantity,
-    Math.max(0, Math.ceil(((target - spec.min) * spec.quantity) / (spec.max - spec.min))),
-  );
+  if (spec.max > spec.min) {
+    if (target <= spec.min) return 0;
+    if (target >= spec.max) return spec.quantity;
+    return Math.min(spec.quantity, Math.max(0, Math.ceil(((target - spec.min) * spec.quantity) / (spec.max - spec.min))));
+  }
+  if (target >= spec.min) return 0;
+  if (target <= spec.max) return spec.quantity;
+  return Math.min(spec.quantity, Math.max(0, Math.ceil(((spec.min - target) * spec.quantity) / (spec.min - spec.max))));
 }
 
 export interface UnlockInfo {
