@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useLocalStorage, formatBig } from '../hooks/useLocalStorage';
 import { ALL_LABS, labsDurationMap } from '../data/labs-data';
 import { maxLevelFor, slotEtaDays, labGroupOf, validateSlots } from '../lib/labs';
+import { LabTimeline } from './LabTimeline';
 
 const SLOT_COUNT = 5;
 const STORE_KEY = 'towerpath:lab-planner-v2';
@@ -218,6 +219,8 @@ export function LabPlannerTab() {
           ))}
         </div>
       </div>
+
+      <LabTimeline slots={safeSlots} globalSpeed={globalSpeed} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {analysis.map((a) => (
