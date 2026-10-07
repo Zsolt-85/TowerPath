@@ -30,6 +30,7 @@ export const NAV_SECTIONS = [
       { id: 'workshop', label: 'Workshop', icon: '⚒' },
       { id: 'uw', label: 'Ultimate Weapons', icon: '✦' },
       { id: 'sync', label: 'Sync Calc', icon: '◉' },
+      { id: 'perks', label: 'Perks', icon: '❖' },
     ],
   },
   {

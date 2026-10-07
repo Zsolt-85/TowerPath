@@ -12,6 +12,7 @@ import { RunView } from './components/RunView';
 import { LabPlannerTab } from './components/LabPlannerTab';
 import { WorkshopTab } from './components/WorkshopTab';
 import { MilestonesTab } from './components/MilestonesTab';
+import { PerksTab } from './components/PerksTab';
 import { Sidebar } from './components/Sidebar';
 import { SyncButton } from './components/SyncButton';
 import { useRuns } from './hooks/useLocalStorage';
@@ -30,6 +31,7 @@ const TITLES: Record<string, string> = {
   labs: 'Lab Planner',
   workshop: 'Workshop',
   milestones: 'Milestones',
+  perks: 'Perks',
 };
 
 export default function TowerPathPage() {
@@ -140,6 +142,7 @@ export default function TowerPathPage() {
           {activeTab === 'uw' && <UWTab />}
           {activeTab === 'sync' && <SyncTab />}
           {activeTab === 'tourney' && <TournamentTab />}
+          {activeTab === 'perks' && <PerksTab />}
         </div>
       </div>
     </div>
