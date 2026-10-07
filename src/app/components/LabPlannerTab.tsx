@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useLocalStorage, formatBig } from '../hooks/useLocalStorage';
 import { ALL_LABS, labsDurationMap } from '../data/labs-data';
-import { labLevelSeconds, maxLevelFor, slotEtaDays, labGroupOf } from '../lib/labs';
+import { maxLevelFor, slotEtaDays, labGroupOf, validateSlots } from '../lib/labs';
 
 const SLOT_COUNT = 5;
 const STORE_KEY = 'towerpath:lab-planner-v2';
@@ -120,6 +120,12 @@ export function LabPlannerTab() {
     });
   }, [safeSlots, globalSpeed]);
 
+  const flags = useMemo(
+    () => validateSlots(safeSlots.map((s) => ({ lab: s.lab, current: s.current, target: s.target }))),
+    [safeSlots]
+  );
+  const flagFor = (idx: number) => flags.find((f) => f.slot === idx);
+
   const ordered = useMemo(() => [...analysis].sort((a, b) => a.hours - b.hours), [analysis]);
   const parallelHours = ordered.length > 0 ? Math.max(...ordered.map((o) => o.hours)) : 0;
   const sequentialHours = ordered.reduce((sum, o) => sum + o.hours, 0);
@@ -222,6 +228,11 @@ export function LabPlannerTab() {
                 {a.eff.toFixed(2)}x effective · finishes in {formatHours(a.hours)}
               </span>
             </div>
+            {flagFor(a.idx) && (
+              <div className="rounded-lg border border-[var(--color-red)]/40 bg-[var(--color-red-glow)] px-3 py-2 text-[11px] mb-4">
+                {flagFor(a.idx)?.message}
+              </div>
+            )}
 
             <label className="block text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Lab</label>
             <select
@@ -249,7 +260,15 @@ export function LabPlannerTab() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Target (max {a.max})</label>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="block text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]">Target (max {a.max})</label>
+                  <button
+                    onClick={() => updateSlot(a.idx, { target: maxLevelFor(a.slot.lab) })}
+                    className="text-[10px] font-bold uppercase text-[var(--color-gold)] border border-[var(--color-gold-dim)] rounded px-2 py-0.5 hover:bg-[var(--color-gold-glow)]"
+                  >
+                    Max
+                  </button>
+                </div>
                 <input
                   type="number"
                   min={0}
