@@ -16,7 +16,6 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
   const [importOpen, setImportOpen] = useState(false);
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [stratFilter, setStratFilter] = useState<string>('all');
-  const [metric, setMetric] = useState<'coins' | 'cells'>('coins');
   const [snapVer, setSnapVer] = useState(0);
 
   useEffect(() => {
@@ -54,13 +53,11 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
     return { strategy: s, runs: rs.length, cph };
   }).filter(s => s.runs > 0).sort((a, b) => b.cph - a.cph);
 
-  const metricValue = (r: Run) => metric === 'cells' ? (r.cells ?? 0) : r.coins;
-  const metricCph = (r: Run) => r.durationMin > 0 ? (metricValue(r) / r.durationMin) * 60 : 0;
-
-  const trend = {
-    perRun: runs.slice(0, 15).reverse().map((r) => ({ x: `T${r.tier} ${r.wave}`, y: metricValue(r), hint: `${r.strategy ?? ''}` })),
-    perHour: runs.slice(0, 15).reverse().map((r) => ({ x: `T${r.tier} ${r.wave}`, y: metricCph(r), hint: `${r.strategy ?? ''} ` })),
-  };
+  const coinRun = runs.slice(0, 15).reverse().map((r) => ({ x: `T${r.tier} ${r.wave}`, y: r.coins, hint: `${r.strategy ?? ''}` }));
+  const cellRun = runs.slice(0, 15).reverse().map((r) => ({ x: `T${r.tier} ${r.wave}`, y: r.cells ?? 0, hint: `${r.strategy ?? ''}` }));
+  const coinHour = runs.slice(0, 15).reverse().map((r) => ({ x: `T${r.tier} ${r.wave}`, y: r.durationMin > 0 ? (r.coins / r.durationMin) * 60 : 0, hint: `${r.strategy ?? ''}` }));
+  const cellHour = runs.slice(0, 15).reverse().map((r) => ({ x: `T${r.tier} ${r.wave}`, y: r.durationMin > 0 ? ((r.cells ?? 0) / r.durationMin) * 60 : 0, hint: `${r.strategy ?? ''}` }));
+  const hasCells = cellRun.some((p) => p.y > 0);
 
   const snaps = useMemo(() => getSnapshots(), [runs, snapVer]);
   const prog = useMemo(() => deltas(snaps), [snaps]);
@@ -132,21 +129,6 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
           <h2 className="font-['Orbitron'] text-lg font-bold">Earnings trends</h2>
-          <div className="flex gap-2">
-            {(['coins', 'cells'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMetric(m)}
-                className={`text-xs px-4 py-2 rounded-lg border transition-all capitalize ${
-                  metric === m
-                    ? 'border-[var(--color-gold)] text-[var(--color-gold)] bg-[var(--color-gold-glow)]'
-                    : 'border-[var(--color-border)] text-[var(--color-text-dim)] hover:text-[var(--color-text)]'
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
         </div>
         {runs.length === 0 ? (
           <div className="text-sm text-[var(--color-text-muted)] py-4 text-center">
@@ -156,15 +138,22 @@ export function TrackerTab({ onLogRun, onOpenRun }: { onLogRun: () => void; onOp
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-                {metric === 'coins' ? 'Coins' : 'Cells'} per run · oldest → newest
+                Coins + cells per run · oldest → newest
               </div>
-              <LineChart series={[{ label: metric === 'coins' ? 'Coins/run' : 'Cells/run', color: 'var(--color-gold)', points: trend.perRun }]} />
+              <LineChart series={[
+                { label: 'Coins/run', color: 'var(--color-gold)', points: coinRun },
+                ...(hasCells ? [{ label: 'Cells/run', color: 'var(--color-teal)', points: cellRun, axis: 'right' as const }] : []),
+              ]} />
+              {!hasCells && <p className="text-[11px] text-[var(--color-text-muted)] mt-1">No cells logged yet — cells axis appears with your first cells run.</p>}
             </div>
             <div>
               <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-                {metric === 'coins' ? 'Coins' : 'Cells'} per hour · oldest → newest
+                Coins + cells per hour · oldest → newest
               </div>
-              <LineChart series={[{ label: metric === 'coins' ? 'Coins/hr' : 'Cells/hr', color: 'var(--color-teal)', points: trend.perHour }]} />
+              <LineChart series={[
+                { label: 'Coins/hr', color: 'var(--color-gold)', points: coinHour },
+                ...(hasCells ? [{ label: 'Cells/hr', color: 'var(--color-teal)', points: cellHour, axis: 'right' as const }] : []),
+              ]} />
             </div>
           </div>
         )}
