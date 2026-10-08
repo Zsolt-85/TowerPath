@@ -181,7 +181,8 @@ export function buildQueue(
   unlockedCount: number,
 ): QueueItem[] {
   const items: QueueItem[] = [];
-  const plan = syncJumps(levels);
+  const trioOwned = ['Golden Tower', 'Black Hole', 'Death Wave'].every((u) => !!unlocked[u]);
+  const plan = trioOwned ? syncJumps(levels) : null;
   if (plan) {
     for (const j of plan.jumps) {
       items.push({

@@ -8,6 +8,7 @@ import {
   nextBuy,
   plusNext,
   buildQueue,
+  cooldownIndex,
   syncJumps,
   type UWLevels,
 } from '../lib/uw';
@@ -25,26 +26,35 @@ export function UWPlanner() {
     () => buildQueue(levels, plus, unlocked, owned.length),
     [levels, plus, unlocked, owned.length],
   );
-  const sync = useMemo(() => syncJumps(levels), [levels]);
+  const trioOwned = ['Golden Tower', 'Black Hole', 'Death Wave'].every((u) => !!unlocked[u]);
+  const sync = useMemo(() => (trioOwned ? syncJumps(levels) : null), [levels, trioOwned]);
   let running = 0;
 
-  const bump = (uw: string, track: string, delta: number) =>
+  const bump = (uw: string, track: string, delta: number) => {
+    if (!unlocked[uw]) return;
     setLevels((prev) => {
       const max = trackDefs(uw).find((d) => d.name === track)?.values.length ?? 1;
       const cur = prev[uw]?.[track] ?? 0;
       const next = Math.max(0, Math.min(max - 1, cur + delta));
       return { ...prev, [uw]: { ...prev[uw], [track]: next } };
     });
-  const applyQueue = (uw: string, track: string | null) => {
-    if (!track) return;
-    bump(uw, track, 1);
+  };
+  const applyQueue = (q: { uw: string; track: string | null; kind: string }) => {
+    if (q.kind === 'next' && q.track) bump(q.uw, q.track, 1);
+    else if (q.kind === 'plus') setPlus((prev) => ({ ...prev, [q.uw]: (prev[q.uw] ?? 0) + 1 }));
+    else if (q.kind === 'sync' && q.track) {
+      const plan = syncJumps(levels);
+      const j = plan?.jumps.find((x) => x.uw === q.uw);
+      const idx = j ? cooldownIndex(j.uw, j.to) : null;
+      if (idx != null) setLevels((prev) => ({ ...prev, [q.uw]: { ...prev[q.uw], [q.track as string]: idx } }));
+    }
   };
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5">
-          <div className="text-[11px] uppercase tracking-[1.5px] text-[var(--color-text-muted)]">Stone wallet</div>
+          <div className="text-[11px] uppercase tracking-[1.5px] text-[var(--color-text-muted)]">Stone wallet · planning input</div>
           <input
             type="number"
             min={0}
@@ -94,7 +104,7 @@ export function UWPlanner() {
                   {q.cost.toLocaleString()}◇
                 </span>
                 {q.track && q.kind !== 'unlock' && (
-                  <button onClick={() => applyQueue(q.uw, q.track)} title="Apply this buy" className="text-xs border border-[var(--color-gold-dim)] text-[var(--color-gold)] rounded-lg px-2 py-1 hover:bg-[var(--color-gold-glow)]">
+                  <button onClick={() => applyQueue(q)} title="Apply this buy" className="text-xs border border-[var(--color-gold-dim)] text-[var(--color-gold)] rounded-lg px-2 py-1 hover:bg-[var(--color-gold-glow)]">
                     ✓
                   </button>
                 )}
