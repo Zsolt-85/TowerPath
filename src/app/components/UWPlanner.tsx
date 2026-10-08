@@ -11,6 +11,7 @@ import {
   cooldownIndex,
   syncJumps,
   type UWLevels,
+  type QueueKind,
 } from '../lib/uw';
 
 export function UWPlanner() {
@@ -39,14 +40,27 @@ export function UWPlanner() {
       return { ...prev, [uw]: { ...prev[uw], [track]: next } };
     });
   };
-  const applyQueue = (q: { uw: string; track: string | null; kind: string }) => {
+  const applyQueue = (q: { uw: string; track: string | null; kind: QueueKind }) => {
     if (q.kind === 'next' && q.track) bump(q.uw, q.track, 1);
-    else if (q.kind === 'plus') setPlus((prev) => ({ ...prev, [q.uw]: (prev[q.uw] ?? 0) + 1 }));
+    else if (q.kind === 'plus') {
+      const uw = q.uw;
+      setPlus((prev) => {
+        const cur = prev[uw] ?? 0;
+        const pb = plusNext(uw, cur);
+        if (!pb || pb.maxed) return prev;
+        return { ...prev, [uw]: cur + 1 };
+      });
+    }
     else if (q.kind === 'sync' && q.track) {
-      const plan = syncJumps(levels);
-      const j = plan?.jumps.find((x) => x.uw === q.uw);
-      const idx = j ? cooldownIndex(j.uw, j.to) : null;
-      if (idx != null) setLevels((prev) => ({ ...prev, [q.uw]: { ...prev[q.uw], [q.track as string]: idx } }));
+      if (!unlocked[q.uw]) return;
+      const track = q.track;
+      setLevels((prev) => {
+        const plan = syncJumps(prev);
+        const j = plan?.jumps.find((x) => x.uw === q.uw);
+        const idx = j ? cooldownIndex(j.uw, j.to) : null;
+        if (idx == null) return prev;
+        return { ...prev, [q.uw]: { ...prev[q.uw], [track]: idx } };
+      });
     }
   };
 
@@ -84,7 +98,7 @@ export function UWPlanner() {
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-6">
         <h2 className="font-['Orbitron'] text-lg font-bold mb-1">Spending queue</h2>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
-          Sync jumps first, then wiki-priority order. Click ✓ to apply a buy to your owned levels.
+          Sync jumps first, then wiki-priority order. Click ✓ to apply a buy to your plan — stones stay in the wallet, spend them in game.
         </p>
         <div className="space-y-2">
           {queue.slice(0, 12).map((q, i) => {
