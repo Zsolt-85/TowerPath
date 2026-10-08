@@ -36,7 +36,7 @@ function fmt(n: number): string {
 // ============================================
 
 interface LineChartProps {
-  series: { label: string; color: string; points: { x: string; y: number; hint?: string }[] }[];
+  series: { label: string; color: string; points: { x: string; y: number; hint?: string }[]; axis?: 'left' | 'right' }[];
   height?: number;
   onPointClick?: (seriesIndex: number, pointIndex: number) => void;
 }
@@ -46,9 +46,11 @@ export function LineChart({ series, height = 240, onPointClick }: LineChartProps
 
   const model = useMemo(() => {
     const n = Math.max(0, ...series.map(s => s.points.length));
-    const maxY = Math.max(1, ...series.flatMap(s => s.points.map(p => p.y)));
-    const ticks = (() => {
-      const max = maxY;
+    const left = series.filter(s => (s.axis ?? 'left') === 'left');
+    const right = series.filter(s => s.axis === 'right');
+    const maxY = Math.max(1, ...left.flatMap(s => s.points.map(p => p.y)));
+    const maxRY = Math.max(1, ...right.flatMap(s => s.points.map(p => p.y)));
+    const makeTicks = (max: number) => {
       const cnt = 4;
       const raw = max / cnt;
       const mag = 10 ** Math.floor(Math.log10(raw));
@@ -57,16 +59,21 @@ export function LineChart({ series, height = 240, onPointClick }: LineChartProps
       const ticks: number[] = [];
       for (let v = 0; v <= max * 1.05; v += step) ticks.push(v);
       return ticks;
-    })();
+    };
+    const ticks = makeTicks(maxY);
+    const ticksR = right.length > 0 ? makeTicks(maxRY) : [];
     const top = ticks[ticks.length - 1] || maxY;
+    const topR = ticksR.length > 0 ? (ticksR[ticksR.length - 1] || maxRY) : maxRY;
     const iw = W - PAD_L - PAD_R;
     const ih = H - PAD_T - PAD_B;
     const xs = (i: number) => n <= 1 ? PAD_L : PAD_L + (i / (n - 1)) * iw;
     const ys = (v: number) => PAD_T + ih - (v / top) * ih;
-    const paths = series.map(s => s.points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xs(i).toFixed(1)},${ys(p.y).toFixed(1)}`).join(' '));
+    const ysR = (v: number) => PAD_T + ih - (v / topR) * ih;
+    const yFor = (si: number, v: number) => ((series[si].axis ?? 'left') === 'right' ? ysR(v) : ys(v));
+    const paths = series.map((s, si) => s.points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xs(i).toFixed(1)},${yFor(si, p.y).toFixed(1)}`).join(' '));
     const labels = series[0]?.points.map(p => p.x) ?? [];
     const showEvery = Math.max(1, Math.ceil(labels.length / 6));
-    return { n, ticks, top, xs, ys, paths, labels, showEvery };
+    return { n, ticks, ticksR, top, topR, hasRight: right.length > 0, xs, ys, ysR, yFor, paths, labels, showEvery };
   }, [series]);
 
   if (model.n === 0) {
@@ -90,6 +97,9 @@ export function LineChart({ series, height = 240, onPointClick }: LineChartProps
             <text x={PAD_L - 6} y={model.ys(t) + 4} textAnchor="end" fontSize={10} fill="var(--color-text-muted)">{fmt(t)}</text>
           </g>
         ))}
+        {model.hasRight && model.ticksR.map(t => (
+          <text key={`r-${t}`} x={W - PAD_R + 6} y={model.ysR(t) + 4} textAnchor="start" fontSize={10} fill="var(--color-text-muted)">{fmt(t)}</text>
+        ))}
         {/* Lines */}
         {model.paths.map((d, si) => (
           <path key={si} d={d} fill="none" stroke={series[si].color} strokeWidth={2.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
@@ -99,7 +109,7 @@ export function LineChart({ series, height = 240, onPointClick }: LineChartProps
           <circle
             key={`${si}-${i}`}
             cx={model.xs(i)}
-            cy={model.ys(p.y)}
+            cy={model.yFor(si, p.y)}
             r={hover === i ? 5 : 3}
             fill="var(--color-bg-card)"
             stroke={s.color}
