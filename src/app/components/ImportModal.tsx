@@ -72,11 +72,15 @@ function SaveFilePanel({ onApplied }: { onApplied: (msg: string) => void }) {
 
     writeStore('towerpath:save', { ...account, fileName, importedAt: new Date().toISOString() });
 
+    writeStore('towerpath:stats:stones', Math.floor(account.wallet.stones));
+    writeStore('towerpath:stats:coins', Math.floor(account.wallet.coins));
+
     const ownedCards = Object.values(account.cards).filter((s) => s > 0).length;
     const unlockedUws = Object.values(account.uwsUnlocked).filter(Boolean).length;
     onApplied(
       `Account applied ✓ ${ownedCards} cards, ${unlockedUws} UWs unlocked` +
-        (account.profile.userName ? ` — welcome, ${account.profile.userName}` : '')
+        (account.profile.userName ? ` — welcome, ${account.profile.userName}` : '') +
+        `, wallet ${account.wallet.stones}◇`
     );
     setPhase('idle');
     setAccount(null);
@@ -129,6 +133,58 @@ function SaveFilePanel({ onApplied }: { onApplied: (msg: string) => void }) {
           </div>
           <div className="text-[11px] text-[var(--color-text-dim)] mb-4">
             Workshop levels ({account.workshop.attack.length}/{account.workshop.defense.length}/{account.workshop.utility.length}) and lab levels are stored for the upcoming planners.
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            {[
+              { label: 'Wallet coins', value: formatBig(account.wallet.coins) },
+              { label: 'Wallet stones', value: `${formatBig(account.wallet.stones)}◇` },
+              { label: 'Medals', value: formatBig(account.wallet.medals) },
+              { label: 'Gems', value: formatBig(account.wallet.gems) },
+            ].map((s, i) => (
+              <div key={i} className="rounded-lg border border-[var(--color-border)] p-3">
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">{s.label}</div>
+                <div className="font-['Orbitron'] text-base font-bold mt-1 truncate">{s.value}</div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            {[
+              { label: 'Lifetime coins', value: formatBig(account.totals.coinsEarned) },
+              { label: 'Lifetime waves', value: account.totals.wavesCompleted.toLocaleString() },
+              { label: 'Stones earned/spent', value: `${formatBig(account.totals.stonesEarned)}/${formatBig(account.totals.stonesSpent)}` },
+            ].map((s, i) => (
+              <div key={i} className="rounded-lg border border-[var(--color-border)] p-3">
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">{s.label}</div>
+                <div className="font-['Orbitron'] text-base font-bold mt-1 truncate">{s.value}</div>
+              </div>
+            ))}
+          </div>
+          {account.bests.wave.slice(0, 25).some((w) => w > 0) && (
+            <div className="rounded-lg border border-[var(--color-border)] p-3 mb-4">
+              <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Per-tier bests</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1 text-xs text-[var(--color-text)]">
+                {account.bests.wave.slice(0, 25).map((w, i) =>
+                  w > 0 ? <div key={i}>Tier {i + 1} — {w.toLocaleString()}</div> : null
+                )}
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-2">
+            {[
+              { label: 'Active labs', value: String(account.labsRaw.active.filter(Boolean).length) },
+              { label: 'UW level array', value: String(account.uwLevels.level.length) },
+              { label: 'Bot array length', value: String(account.botsRaw.level.length) },
+              { label: 'Masteries', value: String(account.cardsExtra.mastery.filter(Boolean).length) },
+              { label: 'Highest league', value: String(account.tournamentMeta.highestLeague) },
+            ].map((s, i) => (
+              <div key={i} className="rounded-lg border border-[var(--color-border)] p-3">
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">{s.label}</div>
+                <div className="font-['Orbitron'] text-base font-bold mt-1 truncate">{s.value}</div>
+              </div>
+            ))}
+          </div>
+          <div className="text-[11px] text-[var(--color-text-dim)] mb-4">
+            Save order → name mapping unverified — shown for reference, not applied.
           </div>
           <div className="flex gap-3">
             <button
