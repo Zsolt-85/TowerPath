@@ -10,6 +10,8 @@ import {
   findPlayerDataContext,
   getBoolArray,
   getInt32Array,
+  getNumber,
+  getNumberArray,
   getString,
 } from "./extract";
 import { CARD_SAVE_INDEX_TO_NAME, UW_UNLOCKED_ORDER } from "./mappings";
@@ -21,6 +23,25 @@ export type DecodedAccount = {
   workshop: { attack: number[]; defense: number[]; utility: number[] };
   labs: number[];
   rawCounts: Record<string, number>;
+  wallet: {
+    coins: number; stones: number; medals: number; gems: number; cells: number;
+    tokens: number; bits: number; tickets: number; cannonShards: number; armorShards: number;
+    generatorShards: number; coreShards: number; rerollShards: number;
+  };
+  totals: {
+    coinsEarned: number; wavesCompleted: number; damageDealt: number; stonesEarned: number;
+    stonesSpent: number; wavesSkipped: number; freeAttack: number; freeDefense: number;
+    freeUtility: number; researchesComplete: number; coinsSpentOnResearch: number;
+  };
+  bests: { currentTier: number; wave: number[]; coins: number[]; cells: number[] };
+  labsRaw: { level: number[]; active: boolean[]; pctComplete: number[]; unlocked: number };
+  uwLevels: { level: number[]; cooldown: number[]; plusLevel: number[]; plusUnlocked: boolean[]; selected: number[] };
+  cardsExtra: { count: number[]; mastery: boolean[]; active: number[]; slots: number };
+  botsRaw: { unlocked: boolean[]; active: boolean[]; level: number[]; goldSelected: number };
+  perksRaw: { level: number[]; picked: number; banned: number[] };
+  milestonesClaimed: boolean[];
+  upgradeTiers: { attack: boolean[]; defense: boolean[]; utility: boolean[] };
+  tournamentMeta: { leagueID: number; highestLeague: number; checkedNumber: number };
 };
 
 /**
@@ -129,6 +150,82 @@ export async function decodeSaveFile(bytes: Uint8Array): Promise<DecodedAccount>
     researchLevel: labs.length,
   };
 
+  const wallet = {
+    coins: getNumber(ctx, 'coins'),
+    stones: getNumber(ctx, 'stones'),
+    medals: getNumber(ctx, 'medals'),
+    gems: getNumber(ctx, 'gems'),
+    cells: getNumber(ctx, 'cells'),
+    tokens: getNumber(ctx, 'tokens'),
+    bits: getNumber(ctx, 'bits'),
+    tickets: getNumber(ctx, 'tickets'),
+    cannonShards: getNumber(ctx, 'moduleCannonShards'),
+    armorShards: getNumber(ctx, 'moduleArmorShards'),
+    generatorShards: getNumber(ctx, 'moduleGeneratorShards'),
+    coreShards: getNumber(ctx, 'moduleCoreShards'),
+    rerollShards: getNumber(ctx, 'moduleRerollCurrency'),
+  };
+  const totals = {
+    coinsEarned: getNumber(ctx, 'totalCoinsEarned'),
+    wavesCompleted: getNumber(ctx, 'totalWavesCompleted'),
+    damageDealt: getNumber(ctx, 'totalDamageDealt'),
+    stonesEarned: getNumber(ctx, 'totalStonesEarned'),
+    stonesSpent: getNumber(ctx, 'totalStonesSpent'),
+    wavesSkipped: getNumber(ctx, 'totalWavesSkipped'),
+    freeAttack: getNumber(ctx, 'totalFreeAttackUpgrades'),
+    freeDefense: getNumber(ctx, 'totalFreeDefenseUpgrades'),
+    freeUtility: getNumber(ctx, 'totalFreeUtilityUpgrades'),
+    researchesComplete: getNumber(ctx, 'researchesComplete'),
+    coinsSpentOnResearch: getNumber(ctx, 'totalCoinsSpentOnResearch'),
+  };
+  const bests = {
+    currentTier: getNumber(ctx, 'currentTier'),
+    wave: getNumberArray(ctx, 'highestWaveThisTier'),
+    coins: getNumberArray(ctx, 'highestCoinsEarnedThisTier'),
+    cells: getNumberArray(ctx, 'highestCellsEarnedThisTier'),
+  };
+  const labsRaw = {
+    level: getInt32Array(ctx, 'labLevel'),
+    active: getBoolArray(ctx, 'labActiveBool'),
+    pctComplete: getNumberArray(ctx, 'researchPercentComplete'),
+    unlocked: getNumber(ctx, 'labsUnlocked'),
+  };
+  const uwLevels = {
+    level: getInt32Array(ctx, 'ultimateWeaponLevel'),
+    cooldown: getInt32Array(ctx, 'ultimateWeaponCooldown'),
+    plusLevel: getInt32Array(ctx, 'ultimateWeaponPlusLevel'),
+    plusUnlocked: getBoolArray(ctx, 'ultimateWeaponPlusUnlocked'),
+    selected: getInt32Array(ctx, 'ultimateWeaponSelectedLevel'),
+  };
+  const cardsExtra = {
+    count: getInt32Array(ctx, 'cardCount'),
+    mastery: getBoolArray(ctx, 'cardMasteryUnlocked'),
+    active: getInt32Array(ctx, 'cardActive'),
+    slots: getNumber(ctx, 'slotsUnlocked'),
+  };
+  const botsRaw = {
+    unlocked: getBoolArray(ctx, 'botsUnlocked'),
+    active: getBoolArray(ctx, 'botsActive'),
+    level: getInt32Array(ctx, 'botsLevel'),
+    goldSelected: getNumber(ctx, 'goldenBotLevelCooldownSelected'),
+  };
+  const perksRaw = {
+    level: getInt32Array(ctx, 'perkLevel'),
+    picked: getNumber(ctx, 'perksPickedCount'),
+    banned: getInt32Array(ctx, 'bannedPerksIndex'),
+  };
+  const milestonesClaimed = getBoolArray(ctx, 'milestonesRewardClaimed');
+  const upgradeTiers = {
+    attack: getBoolArray(ctx, 'upgradeTierUnlocked'),
+    defense: getBoolArray(ctx, 'upgradeDefenseTierUnlocked'),
+    utility: getBoolArray(ctx, 'upgradeUtilityTierUnlocked'),
+  };
+  const tournamentMeta = {
+    leagueID: getNumber(ctx, 'leagueID'),
+    highestLeague: getNumber(ctx, 'highestLeague'),
+    checkedNumber: getNumber(ctx, 'tournamentCheckedNumber'),
+  };
+
   return {
     profile: { userName },
     cards,
@@ -136,5 +233,16 @@ export async function decodeSaveFile(bytes: Uint8Array): Promise<DecodedAccount>
     workshop: { attack, defense, utility },
     labs,
     rawCounts,
+    wallet,
+    totals,
+    bests,
+    labsRaw,
+    uwLevels,
+    cardsExtra,
+    botsRaw,
+    perksRaw,
+    milestonesClaimed,
+    upgradeTiers,
+    tournamentMeta,
   };
 }

@@ -90,3 +90,16 @@ export function getBoolArray(ctx: PlayerDataContext, name: string): boolean[] {
   }
   return [];
 }
+
+export function getNumber(ctx: PlayerDataContext, name: string): number {
+  const raw = unwrapPrimitive(resolveValue(ctx, ctx.player.getValue(name)));
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : 0;
+}
+
+export function getNumberArray(ctx: PlayerDataContext, name: string): number[] {
+  const raw = resolveValue(ctx, ctx.player.getValue(name));
+  if (raw instanceof ArraySinglePrimitiveRecord) {
+    return raw.getArray().map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0));
+  }
+  return [];
+}
