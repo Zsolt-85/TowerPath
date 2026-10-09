@@ -14,6 +14,7 @@ import { LabPlannerTab } from './components/LabPlannerTab';
 import { WorkshopTab } from './components/WorkshopTab';
 import { MilestonesTab } from './components/MilestonesTab';
 import { PerksTab } from './components/PerksTab';
+import { BotsTab } from './components/BotsTab';
 import { Sidebar } from './components/Sidebar';
 import { SyncButton } from './components/SyncButton';
 import { useRuns, useLocalStorage } from './hooks/useLocalStorage';
@@ -34,6 +35,7 @@ const TITLES: Record<string, string> = {
   workshop: 'Workshop',
   milestones: 'Milestones',
   perks: 'Perks',
+  bots: 'Bots',
 };
 
 export default function TowerPathPage() {
@@ -131,6 +133,7 @@ export default function TowerPathPage() {
           {activeTab === 'sync' && <SyncTab />}
           {activeTab === 'tourney' && <TournamentTab />}
           {activeTab === 'perks' && <PerksTab />}
+          {activeTab === 'bots' && <BotsTab />}
         </div>
       </div>
     </div>

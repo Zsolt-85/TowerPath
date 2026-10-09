@@ -31,6 +31,7 @@ export const NAV_SECTIONS = [
       { id: 'uw', label: 'Ultimate Weapons', icon: '✦' },
       { id: 'sync', label: 'Sync Calc', icon: '◉' },
       { id: 'perks', label: 'Perks', icon: '❖' },
+      { id: 'bots', label: 'Bots', icon: '🤖' },
     ],
   },
   {
