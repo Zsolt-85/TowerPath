@@ -44,20 +44,31 @@ export interface Timed {
   cd: number;
 }
 
+const overlapCache = new Map<string, number>();
+
 function activeAt(t: number, u: Timed): boolean {
   return u.cd > 0 && t % u.cd < Math.min(u.dur, u.cd);
 }
 
 export function overlap2(a: Timed, b: Timed): number {
+  const key = `${a.dur}|${a.cd}|${b.dur}|${b.cd}`;
+  const hit = overlapCache.get(key);
+  if (hit !== undefined) return hit;
   const cycle = Math.min(200000, lcm(Math.max(1, Math.round(a.cd)), Math.max(1, Math.round(b.cd))));
   let both = 0;
   for (let t = 0; t < cycle; t += 1) {
     if (activeAt(t, a) && activeAt(t, b)) both += 1;
   }
-  return cycle > 0 ? both / cycle : 0;
+  const v = cycle > 0 ? both / cycle : 0;
+  if (overlapCache.size >= 256) overlapCache.clear();
+  overlapCache.set(key, v);
+  return v;
 }
 
 export function overlap3(a: Timed, b: Timed, c: Timed): number {
+  const key = `${a.dur}|${a.cd}|${b.dur}|${b.cd}|${c.dur}|${c.cd}`;
+  const hit = overlapCache.get(key);
+  if (hit !== undefined) return hit;
   let cycle = lcm(Math.max(1, Math.round(a.cd)), Math.max(1, Math.round(b.cd)));
   cycle = lcm(cycle, Math.max(1, Math.round(c.cd)));
   cycle = Math.min(200000, cycle);
@@ -65,7 +76,10 @@ export function overlap3(a: Timed, b: Timed, c: Timed): number {
   for (let t = 0; t < cycle; t += 1) {
     if (activeAt(t, a) && activeAt(t, b) && activeAt(t, c)) all += 1;
   }
-  return cycle > 0 ? all / cycle : 0;
+  const v = cycle > 0 ? all / cycle : 0;
+  if (overlapCache.size >= 256) overlapCache.clear();
+  overlapCache.set(key, v);
+  return v;
 }
 
 export interface MedalPackage {
@@ -106,7 +120,7 @@ export function buildRoutes(
       gbWithGt: overlap2(gb(cd), gt),
       fourWay,
       gainVsCurrent: null,
-      checkpoint: CHECKPOINTS.find((c) => cd <= c) ?? null,
+      checkpoint: [...CHECKPOINTS].reverse().find((c) => cd <= c) ?? null,
     };
   });
   for (const p of packages) {
@@ -120,7 +134,7 @@ export function buildRoutes(
       gbWithGt: overlap2(gb(p.cooldown), gt),
       fourWay,
       gainVsCurrent: null,
-      checkpoint: CHECKPOINTS.find((c) => p.cooldown <= c) ?? null,
+      checkpoint: [...CHECKPOINTS].reverse().find((c) => p.cooldown <= c) ?? null,
     });
   }
   const current = rows[0]?.fourWay ?? 0;

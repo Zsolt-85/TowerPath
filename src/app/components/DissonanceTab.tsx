@@ -39,8 +39,10 @@ export function DissonanceTab() {
     return [...set].sort((a, b) => a - b);
   }, [fromRuns, overrides]);
 
-  const setEchoCat = (cat: DisCat, v: number) =>
-    setEcho((prev) => ({ ...prev, [cat]: Math.max(0, Math.min(1, v)) }));
+  const setEchoCat = (cat: DisCat, v: number) => {
+    const n = Number(v);
+    setEcho((prev) => ({ ...prev, [cat]: Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : (prev[cat] ?? 0.005) }));
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">

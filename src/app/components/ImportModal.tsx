@@ -72,15 +72,30 @@ function SaveFilePanel({ onApplied }: { onApplied: (msg: string) => void }) {
 
     writeStore('towerpath:save', { ...account, fileName, importedAt: new Date().toISOString() });
 
-    writeStore('towerpath:stats:stones', Math.floor(account.wallet.stones));
-    writeStore('towerpath:stats:coins', Math.floor(account.wallet.coins));
+    let stonesState: string | null = null;
+    let coinsState: string | null = null;
+    try {
+      stonesState = localStorage.getItem('towerpath:stats:stones');
+    } catch {
+      stonesState = null;
+    }
+    try {
+      coinsState = localStorage.getItem('towerpath:stats:coins');
+    } catch {
+      coinsState = null;
+    }
+    const stonesWritten = stonesState == null;
+    const coinsWritten = coinsState == null;
+    if (stonesWritten) writeStore('towerpath:stats:stones', Math.floor(account.wallet.stones));
+    if (coinsWritten) writeStore('towerpath:stats:coins', Math.floor(account.wallet.coins));
 
     const ownedCards = Object.values(account.cards).filter((s) => s > 0).length;
     const unlockedUws = Object.values(account.uwsUnlocked).filter(Boolean).length;
     onApplied(
       `Account applied ✓ ${ownedCards} cards, ${unlockedUws} UWs unlocked` +
         (account.profile.userName ? ` — welcome, ${account.profile.userName}` : '') +
-        `, wallet ${account.wallet.stones}◇`
+        `, wallet ${account.wallet.stones}◇` +
+        `, wallet stones ${stonesWritten ? 'written' : 'kept (manual)'}, coins ${coinsWritten ? 'written' : 'kept (manual)'}`
     );
     setPhase('idle');
     setAccount(null);
@@ -314,6 +329,7 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
     setText('');
     setStrategy('');
     setRunType('farm');
+    setCategory('Attack');
     setTimeout(() => setSavedMsg(''), 2500);
   };
 
