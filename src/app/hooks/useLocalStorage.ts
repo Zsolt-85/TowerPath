@@ -70,6 +70,8 @@ export interface Run {
   strategy?: string;
   source?: 'manual' | 'paste' | 'json';
   runType?: RunType;
+  // dissonance category when runType === 'dissonance' (Attack | UW | Defense | Utility)
+  dissonance?: string;
   detail?: RunDetail;
 }
 

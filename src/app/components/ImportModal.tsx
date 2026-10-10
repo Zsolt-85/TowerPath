@@ -215,6 +215,7 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [runType, setRunType] = useState<RunType>('farm');
+  const [category, setCategory] = useState<string>('Attack');
   const parsed = useMemo(() => (text.trim() ? parseFullReport(text) : null), [text]);
   const detection = useMemo(() => (text.trim() ? detectReportKind(text) : null), [text]);
 
@@ -289,6 +290,7 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
       strategy: strategy || undefined,
       source: 'paste',
       runType,
+      ...(runType === 'dissonance' ? { dissonance: category } : {}),
       detail: parsed && Object.keys(parsed.detail).length > 0 ? parsed.detail : undefined,
     };
     setRuns((prev) => [run, ...prev].slice(0, 500));
@@ -445,6 +447,17 @@ export function ImportModal({ open, onClose }: { open: boolean; onClose: () => v
                       <option value="dissonance">Dissonance</option>
                     </select>
                   </div>
+                  {runType === 'dissonance' && (
+                    <div>
+                      <label className="text-[11px] text-[var(--color-text-muted)] block mb-1">Category</label>
+                      <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls}>
+                        <option value="Attack">Attack</option>
+                        <option value="UW">UW</option>
+                        <option value="Defense">Defense</option>
+                        <option value="Utility">Utility</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
                 {runType === 'tournament' && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
