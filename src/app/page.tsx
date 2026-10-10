@@ -15,6 +15,7 @@ import { WorkshopTab } from './components/WorkshopTab';
 import { MilestonesTab } from './components/MilestonesTab';
 import { PerksTab } from './components/PerksTab';
 import { BotsTab } from './components/BotsTab';
+import { DissonanceTab } from './components/DissonanceTab';
 import { Sidebar } from './components/Sidebar';
 import { SyncButton } from './components/SyncButton';
 import { useRuns, useLocalStorage } from './hooks/useLocalStorage';
@@ -31,6 +32,7 @@ const TITLES: Record<string, string> = {
   uw: 'Ultimate Weapons',
   sync: 'Sync Calc',
   tourney: 'Tournament',
+  dissonance: 'Dissonance',
   labs: 'Lab Planner',
   workshop: 'Workshop',
   milestones: 'Milestones',
@@ -114,6 +116,7 @@ export default function TowerPathPage() {
           {activeTab === 'planner' && <PlannerTab />}
           {activeTab === 'tracker' && <TrackerTab onLogRun={() => setLogOpen(true)} onOpenRun={openRun} />}
           {activeTab === 'labs' && <LabPlannerTab />}
+          {activeTab === 'dissonance' && <DissonanceTab />}
           {activeTab === 'workshop' && <WorkshopTab />}
           {activeTab === 'milestones' && <MilestonesTab />}
           {activeTab === 'run' &&

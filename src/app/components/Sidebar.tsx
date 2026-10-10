@@ -19,6 +19,7 @@ export const NAV_SECTIONS = [
       { id: 'dashboard', label: 'Dashboard', icon: '◈' },
       { id: 'tracker', label: 'Runs', icon: '▤' },
       { id: 'tourney', label: 'Tournament', icon: '🏆' },
+      { id: 'dissonance', label: 'Dissonance', icon: '🌀' },
       { id: 'milestones', label: 'Milestones', icon: '★' },
     ],
   },
