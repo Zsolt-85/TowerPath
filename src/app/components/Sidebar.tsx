@@ -31,6 +31,7 @@ export const NAV_SECTIONS = [
       { id: 'workshop', label: 'Workshop', icon: '⚒' },
       { id: 'uw', label: 'Ultimate Weapons', icon: '✦' },
       { id: 'sync', label: 'Sync Calc', icon: '◉' },
+      { id: 'uptime', label: 'UW Uptime', icon: '⚡' },
       { id: 'perks', label: 'Perks', icon: '❖' },
       { id: 'bots', label: 'Bots', icon: '🤖' },
     ],

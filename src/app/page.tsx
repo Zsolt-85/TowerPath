@@ -7,6 +7,7 @@ import { TrackerTab } from './components/TrackerTab';
 import { CardsTab } from './components/CardsTab';
 import { PresetsTab } from './components/PresetsTab';
 import { UWTab } from './components/UWTab';
+import { UWTimeTab } from './components/UWTimeTab';
 import { SyncTab } from './components/SyncTab';
 import { TournamentTab } from './components/TournamentTab';
 import { RunView } from './components/RunView';
@@ -30,6 +31,7 @@ const TITLES: Record<string, string> = {
   cards: 'Cards',
   presets: 'Presets',
   uw: 'Ultimate Weapons',
+  uptime: 'UW Uptime',
   sync: 'Sync Calc',
   tourney: 'Tournament',
   dissonance: 'Dissonance',
@@ -133,6 +135,7 @@ export default function TowerPathPage() {
           {activeTab === 'cards' && <CardsTab />}
           {activeTab === 'presets' && <PresetsTab />}
           {activeTab === 'uw' && <UWTab />}
+          {activeTab === 'uptime' && <UWTimeTab />}
           {activeTab === 'sync' && <SyncTab />}
           {activeTab === 'tourney' && <TournamentTab />}
           {activeTab === 'perks' && <PerksTab />}
